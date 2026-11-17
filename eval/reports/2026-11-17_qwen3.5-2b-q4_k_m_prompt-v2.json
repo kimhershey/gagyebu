@@ -1,0 +1,135 @@
+{
+  "model": "qwen3.5-2b-q4_k_m",
+  "endpoint": "http://127.0.0.1:8088",
+  "paste": {
+    "fields": {
+      "거래 한 건으로 읽기": {
+        "correct": 32,
+        "total": 39,
+        "accuracy": 0.8205128205128205
+      },
+      "금액": {
+        "correct": 29,
+        "total": 39,
+        "accuracy": 0.7435897435897436
+      },
+      "방향": {
+        "correct": 32,
+        "total": 39,
+        "accuracy": 0.8205128205128205
+      },
+      "날짜": {
+        "correct": 32,
+        "total": 39,
+        "accuracy": 0.8205128205128205
+      },
+      "상대방": {
+        "correct": 6,
+        "total": 39,
+        "accuracy": 0.15384615384615385
+      },
+      "취소 여부": {
+        "correct": 2,
+        "total": 4,
+        "accuracy": 0.5
+      },
+      "안내문 거르기": {
+        "correct": 8,
+        "total": 9,
+        "accuracy": 0.8888888888888888
+      }
+    },
+    "latency_ms": {
+      "mean": 4133,
+      "p50": 4265,
+      "p90": 6162,
+      "max": 11941
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "kb_bank_in: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "kb_bank_check_out: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "shinhan_bank_out: 상대방 틀림 → 2026-02-01 14510 out \"null\"",
+      "woori_bank_in: 상대방 틀림 → 2026-06-20 472 in \"null\"",
+      "woori_bank_out: 상대방 틀림 → 2026-02-23 900 out \"null\"",
+      "hana_bank_out: 상대방 틀림 → 2026-09-10 13958 out \"0908_GOOGLE\"",
+      "nh_bank_in: 상대방 틀림 → 2026-08-14 73000 in \"농협\"",
+      "busan_bank_in: 금액, 상대방 틀림 → 2026-10-12 143 in \"null\"",
+      "busan_bank_out: 상대방 틀림 → 2026-10-12 24000 out \"null\"",
+      "kakaobank_out: 상대방 틀림 → 2025-12-11 7250 out \"null\"",
+      "kbank_out: 상대방 틀림 → 2026-11-17 35900 out \"null\"",
+      "kb_card: 상대방 틀림 → 2026-02-08 129857 out \"null\"",
+      "shinhan_card: 상대방 틀림 → 2026-02-23 2400 out \"null\"",
+      "shinhan_card_foreign: 금액, 상대방 틀림 → 2026-11-11 220000 out \"null\"",
+      "samsung_card: 상대방 틀림 → 2026-01-09 100 out \"null\"",
+      "samsung_card_cancel: 상대방 틀림 → 2026-10-09 4020 out \"null\"",
+      "lotte_card_cancel: 금액, 방향, 날짜, 상대방, 취소 여부 틀림 → 거래 0건",
+      "woori_card_cancel: 금액, 방향, 날짜, 상대방, 취소 여부 틀림 → 거래 0건",
+      "hana_card: 상대방 틀림 → 2026-11-05 200000 out \"하나1\"",
+      "hana_card_key_value: 상대방 틀림 → 2026-10-15 12300 out \"쿠팡\"",
+      "bc_card: 상대방 틀림 → 2026-04-24 12300 out \"홍길동님\"",
+      "nh_card_check: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "citi_card: 상대방 틀림 → 2026-04-24 12300 out \"홍길동\"",
+      "shinhan_card_web_header: 상대방 틀림 → 2026-11-16 12500 out \"null\"",
+      "kakaobank_push_in: 상대방 틀림 → 2026-11-17 50440 in \"null\"",
+      "kbank_push_in: 상대방 틀림 → 2026-11-17 3000000 in \"null\"",
+      "tossbank_push_in: 상대방 틀림 → 2026-11-17 200000 in \"null\"",
+      "tossbank_push_cashback: 금액, 상대방 틀림 → 2026-11-17 6 out \"null\"",
+      "toss_push_pay: 상대방 틀림 → 2026-11-17 133500 out \"하나카드\"",
+      "kbstar_push_out: 상대방 틀림 → 2026-07-27 10000 out \"null\"",
+      "shinhan_sol_push_out: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "nh_allone_push_in: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "hana_pay_push: 상대방 틀림 → 2026-11-09 4500 out \"null\"",
+      "notice_hyundai_payment_received: 안내문인데 거래로 읽음"
+    ]
+  },
+  "sentences": {
+    "fields": {
+      "금액": {
+        "correct": 37,
+        "total": 40,
+        "accuracy": 0.925
+      },
+      "날짜": {
+        "correct": 37,
+        "total": 40,
+        "accuracy": 0.925
+      },
+      "방향": {
+        "correct": 37,
+        "total": 40,
+        "accuracy": 0.925
+      },
+      "상대 · 내용": {
+        "correct": 25,
+        "total": 32,
+        "accuracy": 0.78125
+      },
+      "금액 · 날짜 · 방향 모두": {
+        "correct": 37,
+        "total": 40,
+        "accuracy": 0.925
+      }
+    },
+    "latency_ms": {
+      "mean": 3895,
+      "p50": 4088,
+      "p90": 4478,
+      "max": 5349
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "오늘 스타벅스 아메리카노 4500원: 상대 · 내용 틀림 → 2026-11-17 4500 out \"null\" / \"아메리카노\"",
+      "엄마한테 용돈 10만원 받음: 상대 · 내용 틀림 → 2026-11-17 100000 in \"null\" / \"용돈\"",
+      "동생한테 5만원 보냄: 금액, 날짜, 방향, 상대 · 내용 틀림 → 거래 0건",
+      "친구가 밥값 1만 5천원 보내줌: 상대 · 내용 틀림 → 2026-11-17 15000 in \"null\" / \"밥값\"",
+      "넷플릭스 구독료 17,000원 결제: 상대 · 내용 틀림 → 2026-11-17 17000 out \"null\" / \"구독료\"",
+      "그저께 마트 장보기 87,450원 체크카드: 상대 · 내용 틀림 → 2026-11-15 87450 out \"null\" / \"장보기\"",
+      "보너스 200만원: 금액, 날짜, 방향 틀림 → 거래 0건",
+      "당근마켓 판매 3만원 입금: 상대 · 내용 틀림 → 2026-11-17 30000 in \"null\" / \"null\"",
+      "지난주 일요일 결혼식 축의금 10만원: 금액, 날짜, 방향 틀림 → 거래 0건"
+    ]
+  }
+}

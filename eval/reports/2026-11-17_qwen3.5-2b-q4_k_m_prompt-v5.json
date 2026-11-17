@@ -1,0 +1,99 @@
+{
+  "mode": "llm",
+  "model": "qwen3.5-2b-q4_k_m",
+  "prompt": "v5",
+  "endpoint": "http://127.0.0.1:8088",
+  "paste": {
+    "fields": {
+      "거래 한 건으로 읽기": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "금액": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "방향": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "날짜": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "상대방": {
+        "correct": 38,
+        "total": 39,
+        "accuracy": 0.9743589743589743
+      },
+      "모든 항목": {
+        "correct": 38,
+        "total": 39,
+        "accuracy": 0.9743589743589743
+      },
+      "취소 여부": {
+        "correct": 4,
+        "total": 4,
+        "accuracy": 1.0
+      },
+      "안내문 거르기": {
+        "correct": 9,
+        "total": 9,
+        "accuracy": 1.0
+      }
+    },
+    "latency_ms": {
+      "mean": 5092,
+      "p50": 5034,
+      "p90": 5521,
+      "max": 6510
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "busan_bank_out: 상대방 틀림 → 2026-10-12 24000 out \"홍길동\""
+    ]
+  },
+  "sentences": {
+    "fields": {
+      "금액": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "날짜": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "방향": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "상대 · 내용": {
+        "correct": 32,
+        "total": 32,
+        "accuracy": 1.0
+      },
+      "금액 · 날짜 · 방향 모두": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      }
+    },
+    "latency_ms": {
+      "mean": 4742,
+      "p50": 4751,
+      "p90": 5167,
+      "max": 5504
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": []
+  }
+}

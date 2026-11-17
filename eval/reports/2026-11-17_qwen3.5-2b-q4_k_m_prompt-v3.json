@@ -1,0 +1,106 @@
+{
+  "model": "qwen3.5-2b-q4_k_m",
+  "endpoint": "http://127.0.0.1:8088",
+  "paste": {
+    "fields": {
+      "거래 한 건으로 읽기": {
+        "correct": 32,
+        "total": 39,
+        "accuracy": 0.8205128205128205
+      },
+      "금액": {
+        "correct": 32,
+        "total": 39,
+        "accuracy": 0.8205128205128205
+      },
+      "방향": {
+        "correct": 32,
+        "total": 39,
+        "accuracy": 0.8205128205128205
+      },
+      "날짜": {
+        "correct": 32,
+        "total": 39,
+        "accuracy": 0.8205128205128205
+      },
+      "상대방": {
+        "correct": 28,
+        "total": 39,
+        "accuracy": 0.717948717948718
+      },
+      "취소 여부": {
+        "correct": 2,
+        "total": 4,
+        "accuracy": 0.5
+      },
+      "안내문 거르기": {
+        "correct": 9,
+        "total": 9,
+        "accuracy": 1.0
+      }
+    },
+    "latency_ms": {
+      "mean": 5458,
+      "p50": 5285,
+      "p90": 5988,
+      "max": 11881
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "ibk_bank_out: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "busan_bank_in: 금액, 상대방 틀림 → 2026-10-12 143 in \"당근\"",
+      "busan_bank_out: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "shinhan_card_foreign: 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "lotte_card_cancel: 금액, 방향, 날짜, 상대방, 취소 여부 틀림 → 거래 0건",
+      "woori_card_cancel: 금액, 방향, 날짜, 상대방, 취소 여부 틀림 → 거래 0건",
+      "nh_card_check: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건",
+      "kbank_push_in: 상대방 틀림 → 2026-11-17 3000000 in \"대출실행\"",
+      "toss_push_pay: 상대방 틀림 → 2026-11-17 133500 out \"비비큐 강동밀레니얼점(일시불)\"",
+      "shinhan_sol_push_out: 상대방 틀림 → 2026-11-09 1000 out \"홍길동 입출금(0000)\"",
+      "hana_pay_push: 금액, 방향, 날짜, 상대방 틀림 → 거래 0건"
+    ]
+  },
+  "sentences": {
+    "fields": {
+      "금액": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "날짜": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "방향": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "상대 · 내용": {
+        "correct": 29,
+        "total": 32,
+        "accuracy": 0.90625
+      },
+      "금액 · 날짜 · 방향 모두": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      }
+    },
+    "latency_ms": {
+      "mean": 4818,
+      "p50": 4794,
+      "p90": 5242,
+      "max": 5472
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "관리비 15만 2천원 냄: 상대 · 내용 틀림 → 2026-11-17 152000 out \"null\" / \"null\"",
+      "어제 저녁 치킨 2만3천원 배달: 상대 · 내용 틀림 → 2026-11-16 23000 out \"배달\" / \"저녁\"",
+      "당근마켓 판매 3만원 입금: 상대 · 내용 틀림 → 2026-11-17 30000 in \"null\" / \"null\""
+    ]
+  }
+}

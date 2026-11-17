@@ -1,0 +1,12 @@
+# 편집기 · OS
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# 로컬 비밀 값. 저장소에 넣지 않는다.
+.env
+.env.*
+*.keystore
+*.jks
+key.properties

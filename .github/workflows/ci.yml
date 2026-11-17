@@ -1,0 +1,138 @@
+name: CI
+
+# 시험, 서버 SQL 검증, 세 플랫폼 빌드.
+# 웹 앱 배포는 저장소 변수 DEPLOY_PAGES가 'true'일 때만 한다(Settings → Pages → Source: GitHub Actions).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.50.0'
+
+jobs:
+  test:
+    name: 분석 · 시험 · 라이선스
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      # Linux에서는 시스템의 SQLite를 쓴다(pubspec.yaml의 hooks 설정).
+      - run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+      - run: flutter pub get
+      - name: 생성 코드가 최신인지 확인
+        run: |
+          dart run build_runner build
+          git diff --exit-code -- lib
+      - run: dart format --output=none --set-exit-if-changed lib test tool
+      - run: flutter analyze
+      - run: flutter test
+      - name: 의존성 라이선스 검사
+        run: dart run tool/check_licenses.dart
+
+  server-sql:
+    name: 서버 SQL (PostgreSQL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-16
+      - run: supabase/tests/run_local.sh
+
+  web:
+    name: 웹 빌드
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: sqlite3.wasm과 drift_worker.js 준비
+        run: dart run tool/prepare_web_assets.dart
+      # 엔진 파일을 CDN에서 받지 않고 앱과 함께 올린다. 앱이 다른 서버에 접속하지 않게 하기 위해서다.
+      - run: flutter build web --release --no-web-resources-cdn --base-href "/${{ github.event.repository.name }}/"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/build/web
+
+  deploy-web:
+    name: 웹 배포 (GitHub Pages)
+    needs: web
+    if: github.ref == 'refs/heads/main' && vars.DEPLOY_PAGES == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  android:
+    name: Android APK
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # 서명 키를 정하기 전까지는 디버그 키로 서명한 시험용 APK다.
+      - run: flutter build apk --release --target-platform android-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gagyebu-android-arm64
+          path: app/build/app/outputs/flutter-apk/app-release.apk
+
+  windows:
+    name: Windows
+    needs: test
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build windows --release
+      # 설치 프로그램(Inno Setup)은 패키징 단계에서 붙인다. 지금은 실행 폴더를 그대로 올린다.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gagyebu-windows-x64
+          path: app/build/windows/x64/runner/Release

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!--
+    하위 경로에 올릴 때는 `flutter build web --base-href /경로/`로 바꾼다.
+    값은 '/'로 시작하고 끝나야 한다.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="문자와 문장으로 적는 가계부">
+  <meta name="theme-color" content="#2F6FED">
+
+  <!-- 홈 화면에 추가했을 때(iPhone · iPad) -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="가계부">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>가계부</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { height: 100%; margin: 0; background: #F8F9FF; }
+    @media (prefers-color-scheme: dark) { html, body { background: #111318; } }
+    #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+               font: 15px system-ui, sans-serif; color: #5E6470; }
+  </style>
+</head>
+<body>
+  <div id="loading">가계부를 여는 중…</div>
+  <script>
+    // 첫 화면이 그려지면 안내 글을 지운다.
+    window.addEventListener('flutter-first-frame', function () {
+      var loading = document.getElementById('loading');
+      if (loading) loading.remove();
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

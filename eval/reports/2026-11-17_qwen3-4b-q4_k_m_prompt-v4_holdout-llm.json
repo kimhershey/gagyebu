@@ -1,0 +1,112 @@
+{
+  "mode": "llm",
+  "model": "qwen3-4b-instruct-2507-q4_k_m",
+  "prompt": "v4",
+  "endpoint": "http://127.0.0.1:8088",
+  "holdout_paste": {
+    "fields": {
+      "거래 한 건으로 읽기": {
+        "correct": 20,
+        "total": 20,
+        "accuracy": 1.0
+      },
+      "금액": {
+        "correct": 20,
+        "total": 20,
+        "accuracy": 1.0
+      },
+      "방향": {
+        "correct": 17,
+        "total": 20,
+        "accuracy": 0.85
+      },
+      "날짜": {
+        "correct": 20,
+        "total": 20,
+        "accuracy": 1.0
+      },
+      "상대방": {
+        "correct": 15,
+        "total": 20,
+        "accuracy": 0.75
+      },
+      "모든 항목": {
+        "correct": 13,
+        "total": 20,
+        "accuracy": 0.65
+      },
+      "취소 여부": {
+        "correct": 2,
+        "total": 2,
+        "accuracy": 1.0
+      },
+      "안내문 거르기": {
+        "correct": 5,
+        "total": 6,
+        "accuracy": 0.8333333333333334
+      }
+    },
+    "latency_ms": {
+      "mean": 12554,
+      "p50": 11987,
+      "p90": 13419,
+      "max": 33632
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "ho_securities_out: 상대방 틀림 → 2026-11-13 300000 out \"CMA계좌\"",
+      "ho_cu_multiline: 상대방 틀림 → 2026-11-16 12000 out \"신협\"",
+      "ho_card_cancel: 상대방 틀림 → 2026-11-11 15800 out \"교보문고\"",
+      "ho_received_sentence: 방향, 상대방 틀림 → 2026-11-17 50000 out \"김민지님이\"",
+      "ho_refund: 방향 틀림 → 2026-11-13 12900 in \"이마트몰\"",
+      "ho_transit_topup: 방향 틀림 → 2026-11-15 30000 in \"티머니\"",
+      "ho_delivery: 상대방 틀림 → 2026-11-17 24500 out \"배달의민족\"",
+      "ho_notice_limit: 안내문인데 거래로 읽음"
+    ]
+  },
+  "holdout_sentences": {
+    "fields": {
+      "금액": {
+        "correct": 19,
+        "total": 20,
+        "accuracy": 0.95
+      },
+      "날짜": {
+        "correct": 17,
+        "total": 20,
+        "accuracy": 0.85
+      },
+      "방향": {
+        "correct": 17,
+        "total": 20,
+        "accuracy": 0.85
+      },
+      "상대 · 내용": {
+        "correct": 18,
+        "total": 20,
+        "accuracy": 0.9
+      },
+      "금액 · 날짜 · 방향 모두": {
+        "correct": 15,
+        "total": 20,
+        "accuracy": 0.75
+      }
+    },
+    "latency_ms": {
+      "mean": 11455,
+      "p50": 11482,
+      "p90": 12040,
+      "max": 12370
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "토요일 친구 결혼식 축의금 10만원: 방향, 상대 · 내용 틀림 → 2026-11-14 100000 in \"친구\" / \"결혼식\"",
+      "11월 3일 병원비 45,000원 실비 청구 예정: 금액, 날짜, 방향, 상대 · 내용 틀림 → 거래 0건",
+      "택시비 만 이천원 어젯밤: 날짜 틀림 → 2026-11-17 12000 out \"null\" / \"택시비\"",
+      "5일에 받은 연말정산 환급 32만원: 날짜 틀림 → 2026-11-17 320000 in \"연말정산\" / \"환급\"",
+      "부모님 용돈 드림 30만원: 방향 틀림 → 2026-11-17 300000 in \"용돈 드림\" / \"용돈\""
+    ]
+  }
+}

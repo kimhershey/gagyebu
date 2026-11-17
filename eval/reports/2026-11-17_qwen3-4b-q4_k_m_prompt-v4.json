@@ -1,0 +1,102 @@
+{
+  "mode": "llm",
+  "model": "qwen3-4b-instruct-2507-q4_k_m",
+  "prompt": "v4",
+  "endpoint": "http://127.0.0.1:8088",
+  "paste": {
+    "fields": {
+      "거래 한 건으로 읽기": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "금액": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "방향": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "날짜": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "상대방": {
+        "correct": 38,
+        "total": 39,
+        "accuracy": 0.9743589743589743
+      },
+      "모든 항목": {
+        "correct": 38,
+        "total": 39,
+        "accuracy": 0.9743589743589743
+      },
+      "취소 여부": {
+        "correct": 4,
+        "total": 4,
+        "accuracy": 1.0
+      },
+      "안내문 거르기": {
+        "correct": 8,
+        "total": 9,
+        "accuracy": 0.8888888888888888
+      }
+    },
+    "latency_ms": {
+      "mean": 12016,
+      "p50": 12087,
+      "p90": 13250,
+      "max": 15604
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "busan_bank_out: 상대방 틀림 → 2026-10-12 24000 out \"홍길동\"",
+      "notice_hyundai_payment_received: 안내문인데 거래로 읽음"
+    ]
+  },
+  "sentences": {
+    "fields": {
+      "금액": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "날짜": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "방향": {
+        "correct": 39,
+        "total": 40,
+        "accuracy": 0.975
+      },
+      "상대 · 내용": {
+        "correct": 32,
+        "total": 32,
+        "accuracy": 1.0
+      },
+      "금액 · 날짜 · 방향 모두": {
+        "correct": 39,
+        "total": 40,
+        "accuracy": 0.975
+      }
+    },
+    "latency_ms": {
+      "mean": 11565,
+      "p50": 11537,
+      "p90": 12786,
+      "max": 13656
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "지난주 일요일 결혼식 축의금 10만원: 방향 틀림 → 2026-11-15 100000 in \"결혼식\" / \"축의금\""
+    ]
+  }
+}

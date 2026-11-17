@@ -1,0 +1,54 @@
+name: gagyebu
+description: "LLM·VLM 기반 가계부"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.14.0
+
+# 의존성은 소스 공개 의무가 없는 허용형 라이선스만 쓴다.
+# 추가하기 전에 tool/check_licenses.dart로 확인한다.
+dependencies:
+  collection: ^1.19.1
+  drift: ^2.35.4
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.5.0
+  go_router: ^18.1.4
+  http: ^1.6.0
+  material_ui: ^1.1.0
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  sqlite3: ^3.9.1
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.35.3
+  build_runner: ^2.17.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/fonts/Pretendard-OFL.txt
+  # Pretendard(SIL OFL 1.1). 고치지 않은 원본 파일을 그대로 넣는다.
+  fonts:
+    - family: Pretendard
+      fonts:
+        - asset: assets/fonts/Pretendard-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Pretendard-SemiBold.otf
+          weight: 600
+
+# sqlite3 패키지의 빌드 훅 설정.
+# Android와 Windows는 패키지가 제공하는 SQLite를 앱에 함께 넣는다(기본값).
+# Linux는 배포 대상이 아니고 개발 · 시험에만 쓰므로 시스템의 libsqlite3를 쓴다.
+hooks:
+  user_defines:
+    sqlite3:
+      source:
+        linux: system

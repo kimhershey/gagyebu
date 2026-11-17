@@ -1,0 +1,20 @@
+{"id": "ho_sentence_001", "today": "2026-11-17", "text": "방금 편의점에서 삼각김밥이랑 우유 3,200원 썼어", "expect": {"date": "2026-11-17", "amount": 3200, "direction": "out"}, "counterparty_contains": "편의점"}
+{"id": "ho_sentence_002", "today": "2026-11-17", "text": "그저께 엄마가 20만원 보내주심", "expect": {"date": "2026-11-15", "amount": 200000, "direction": "in"}, "counterparty_contains": "엄마"}
+{"id": "ho_sentence_003", "today": "2026-11-17", "text": "지난달 30일 헬스장 3개월 27만원 결제", "expect": {"date": "2026-10-30", "amount": 270000, "direction": "out"}, "counterparty_contains": "헬스장"}
+{"id": "ho_sentence_004", "today": "2026-11-17", "text": "토요일 친구 결혼식 축의금 10만원", "expect": {"date": "2026-11-14", "amount": 100000, "direction": "out"}, "counterparty_contains": "축의금"}
+{"id": "ho_sentence_005", "today": "2026-11-17", "text": "11월 3일 병원비 45,000원 실비 청구 예정", "expect": {"date": "2026-11-03", "amount": 45000, "direction": "out"}, "counterparty_contains": "병원비"}
+{"id": "ho_sentence_006", "today": "2026-11-17", "text": "넷플릭스 구독료 17,000원 자동결제됨", "expect": {"date": "2026-11-17", "amount": 17000, "direction": "out"}, "counterparty_contains": "넷플릭스"}
+{"id": "ho_sentence_007", "today": "2026-11-17", "text": "중고나라에 자전거 팔고 15만원 받았음", "expect": {"date": "2026-11-17", "amount": 150000, "direction": "in"}, "counterparty_contains": "중고나라"}
+{"id": "ho_sentence_008", "today": "2026-11-17", "text": "어제 회사 동료들이랑 커피 내가 쏨 2만 4천원", "expect": {"date": "2026-11-16", "amount": 24000, "direction": "out"}, "counterparty_contains": "커피"}
+{"id": "ho_sentence_009", "today": "2026-11-17", "text": "그제 주유 7만원", "expect": {"date": "2026-11-15", "amount": 70000, "direction": "out"}, "counterparty_contains": "주유"}
+{"id": "ho_sentence_010", "today": "2026-11-17", "text": "이번 달 통신비 6만 5천 9백원 빠져나감", "expect": {"date": "2026-11-17", "amount": 65900, "direction": "out"}, "counterparty_contains": "통신비"}
+{"id": "ho_sentence_011", "today": "2026-11-17", "text": "적금 이자 12,340원 들어옴", "expect": {"date": "2026-11-17", "amount": 12340, "direction": "in"}, "counterparty_contains": "이자"}
+{"id": "ho_sentence_012", "today": "2026-11-17", "text": "지난주 수요일 치과 스케일링 18,000원", "expect": {"date": "2026-11-11", "amount": 18000, "direction": "out"}, "counterparty_contains": "치과"}
+{"id": "ho_sentence_013", "today": "2026-11-17", "text": "택시비 만 이천원 어젯밤", "expect": {"date": "2026-11-16", "amount": 12000, "direction": "out"}, "counterparty_contains": "택시비"}
+{"id": "ho_sentence_014", "today": "2026-11-17", "text": "5일에 받은 연말정산 환급 32만원", "expect": {"date": "2026-11-05", "amount": 320000, "direction": "in"}, "counterparty_contains": "연말정산"}
+{"id": "ho_sentence_015", "today": "2026-11-17", "text": "아이 학원비 35만원 계좌이체 했음", "expect": {"date": "2026-11-17", "amount": 350000, "direction": "out"}, "counterparty_contains": "학원비"}
+{"id": "ho_sentence_016", "today": "2026-11-17", "text": "다이소에서 수납함 2개 4천원", "expect": {"date": "2026-11-17", "amount": 4000, "direction": "out"}, "counterparty_contains": "다이소"}
+{"id": "ho_sentence_017", "today": "2026-11-17", "text": "부모님 용돈 드림 30만원", "expect": {"date": "2026-11-17", "amount": 300000, "direction": "out"}, "counterparty_contains": "용돈"}
+{"id": "ho_sentence_018", "today": "2026-11-17", "text": "오늘 점심 회사 근처 국밥집 9,000원", "expect": {"date": "2026-11-17", "amount": 9000, "direction": "out"}, "counterparty_contains": "국밥집"}
+{"id": "ho_sentence_019", "today": "2026-11-17", "text": "어제 온라인으로 책 두 권 31,500원 주문", "expect": {"date": "2026-11-16", "amount": 31500, "direction": "out"}, "counterparty_contains": "책"}
+{"id": "ho_sentence_020", "today": "2026-11-17", "text": "11/2 전기요금 42,180원 납부", "expect": {"date": "2026-11-02", "amount": 42180, "direction": "out"}, "counterparty_contains": "전기요금"}

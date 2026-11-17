@@ -1,0 +1,96 @@
+{
+  "model": "qwen3.5-2b-q4_k_m",
+  "prompt": "v4",
+  "endpoint": "http://127.0.0.1:8088",
+  "paste": {
+    "fields": {
+      "거래 한 건으로 읽기": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "금액": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "방향": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "날짜": {
+        "correct": 39,
+        "total": 39,
+        "accuracy": 1.0
+      },
+      "상대방": {
+        "correct": 37,
+        "total": 39,
+        "accuracy": 0.9487179487179487
+      },
+      "취소 여부": {
+        "correct": 4,
+        "total": 4,
+        "accuracy": 1.0
+      },
+      "안내문 거르기": {
+        "correct": 9,
+        "total": 9,
+        "accuracy": 1.0
+      }
+    },
+    "latency_ms": {
+      "mean": 5450,
+      "p50": 5282,
+      "p90": 5881,
+      "max": 12216
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "busan_bank_out: 상대방 틀림 → 2026-10-12 24000 out \"홍길동\"",
+      "shinhan_card_foreign: 상대방 틀림 → 2026-11-11 null out \"(US)\""
+    ]
+  },
+  "sentences": {
+    "fields": {
+      "금액": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "날짜": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "방향": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      },
+      "상대 · 내용": {
+        "correct": 31,
+        "total": 32,
+        "accuracy": 0.96875
+      },
+      "금액 · 날짜 · 방향 모두": {
+        "correct": 40,
+        "total": 40,
+        "accuracy": 1.0
+      }
+    },
+    "latency_ms": {
+      "mean": 4816,
+      "p50": 4785,
+      "p90": 5238,
+      "max": 5516
+    },
+    "retries": 0,
+    "failures": 0,
+    "misses": [
+      "당근마켓 판매 3만원 입금: 상대 · 내용 틀림 → 2026-11-17 30000 in \"null\" / \"null\""
+    ]
+  }
+}

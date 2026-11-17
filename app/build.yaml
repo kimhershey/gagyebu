@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # 생성 코드가 쓰는 SQLite 기능의 기준 버전
+          sqlite:
+            version: "3.38"

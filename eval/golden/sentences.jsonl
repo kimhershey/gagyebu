@@ -1,0 +1,40 @@
+{"id": "sentence_001", "today": "2026-11-17", "text": "어제 점심 김밥천국 8천원 카드로", "expect": {"date": "2026-11-16", "amount": 8000, "direction": "out"}, "counterparty_contains": "김밥천국"}
+{"id": "sentence_002", "today": "2026-11-17", "text": "오늘 스타벅스 아메리카노 4500원", "expect": {"date": "2026-11-17", "amount": 4500, "direction": "out"}, "counterparty_contains": "스타벅스"}
+{"id": "sentence_003", "today": "2026-11-17", "text": "그제 택시비 12,300원", "expect": {"date": "2026-11-15", "amount": 12300, "direction": "out"}, "counterparty_contains": "택시"}
+{"id": "sentence_004", "today": "2026-11-17", "text": "지난주 금요일 회식 3만 5천원", "expect": {"date": "2026-11-13", "amount": 35000, "direction": "out"}, "counterparty_contains": "회식"}
+{"id": "sentence_005", "today": "2026-11-17", "text": "11월 10일 월급 320만원 들어옴", "expect": {"date": "2026-11-10", "amount": 3200000, "direction": "in"}}
+{"id": "sentence_006", "today": "2026-11-17", "text": "엄마한테 용돈 10만원 받음", "expect": {"date": "2026-11-17", "amount": 100000, "direction": "in"}, "counterparty_contains": "엄마"}
+{"id": "sentence_007", "today": "2026-11-17", "text": "관리비 15만 2천원 냄", "expect": {"date": "2026-11-17", "amount": 152000, "direction": "out"}, "counterparty_contains": "관리비"}
+{"id": "sentence_008", "today": "2026-11-17", "text": "3일 전 쿠팡에서 생수 2박스 18,900원", "expect": {"date": "2026-11-14", "amount": 18900, "direction": "out"}, "counterparty_contains": "쿠팡"}
+{"id": "sentence_009", "today": "2026-11-17", "text": "이번 주 월요일 주유 6만원", "expect": {"date": "2026-11-16", "amount": 60000, "direction": "out"}, "counterparty_contains": "주유"}
+{"id": "sentence_010", "today": "2026-11-17", "text": "어제 저녁 치킨 2만3천원 배달", "expect": {"date": "2026-11-16", "amount": 23000, "direction": "out"}, "counterparty_contains": "치킨"}
+{"id": "sentence_011", "today": "2026-11-17", "text": "편의점 3,200원", "expect": {"date": "2026-11-17", "amount": 3200, "direction": "out"}, "counterparty_contains": "편의점"}
+{"id": "sentence_012", "today": "2026-11-17", "text": "11/5 병원비 25000원", "expect": {"date": "2026-11-05", "amount": 25000, "direction": "out"}, "counterparty_contains": "병원"}
+{"id": "sentence_013", "today": "2026-11-17", "text": "지난달 25일 월세 55만원 이체", "expect": {"date": "2026-10-25", "amount": 550000, "direction": "out"}, "counterparty_contains": "월세"}
+{"id": "sentence_014", "today": "2026-11-17", "text": "동생한테 5만원 보냄", "expect": {"date": "2026-11-17", "amount": 50000, "direction": "out"}, "counterparty_contains": "동생"}
+{"id": "sentence_015", "today": "2026-11-17", "text": "친구가 밥값 1만 5천원 보내줌", "expect": {"date": "2026-11-17", "amount": 15000, "direction": "in"}, "counterparty_contains": "친구"}
+{"id": "sentence_016", "today": "2026-11-17", "text": "넷플릭스 구독료 17,000원 결제", "expect": {"date": "2026-11-17", "amount": 17000, "direction": "out"}, "counterparty_contains": "넷플릭스"}
+{"id": "sentence_017", "today": "2026-11-17", "text": "어제 영화 2명 3만원", "expect": {"date": "2026-11-16", "amount": 30000, "direction": "out"}, "counterparty_contains": "영화"}
+{"id": "sentence_018", "today": "2026-11-17", "text": "이자 1,234원 입금", "expect": {"date": "2026-11-17", "amount": 1234, "direction": "in"}}
+{"id": "sentence_019", "today": "2026-11-17", "text": "중고나라에서 자전거 팔아서 15만원 받았어", "expect": {"date": "2026-11-17", "amount": 150000, "direction": "in"}}
+{"id": "sentence_020", "today": "2026-11-17", "text": "그저께 마트 장보기 87,450원 체크카드", "expect": {"date": "2026-11-15", "amount": 87450, "direction": "out"}, "counterparty_contains": "마트"}
+{"id": "sentence_021", "today": "2026-11-17", "text": "오늘 아침 버스비 1500원", "expect": {"date": "2026-11-17", "amount": 1500, "direction": "out"}, "counterparty_contains": "버스"}
+{"id": "sentence_022", "today": "2026-11-17", "text": "토요일에 미용실 4만원", "expect": {"date": "2026-11-14", "amount": 40000, "direction": "out"}, "counterparty_contains": "미용실"}
+{"id": "sentence_023", "today": "2026-11-17", "text": "보너스 200만원", "expect": {"date": "2026-11-17", "amount": 2000000, "direction": "in"}}
+{"id": "sentence_024", "today": "2026-11-17", "text": "주차비 3천원 현금", "expect": {"date": "2026-11-17", "amount": 3000, "direction": "out"}, "counterparty_contains": "주차"}
+{"id": "sentence_025", "today": "2026-11-17", "text": "어제 약국 8,700원", "expect": {"date": "2026-11-16", "amount": 8700, "direction": "out"}, "counterparty_contains": "약국"}
+{"id": "sentence_026", "today": "2026-11-17", "text": "커피 2잔 9000원", "expect": {"date": "2026-11-17", "amount": 9000, "direction": "out"}, "counterparty_contains": "커피"}
+{"id": "sentence_027", "today": "2026-11-17", "text": "핸드폰 요금 6만 9천원 자동이체", "expect": {"date": "2026-11-17", "amount": 69000, "direction": "out"}}
+{"id": "sentence_028", "today": "2026-11-17", "text": "당근마켓 판매 3만원 입금", "expect": {"date": "2026-11-17", "amount": 30000, "direction": "in"}, "counterparty_contains": "당근"}
+{"id": "sentence_029", "today": "2026-11-17", "text": "점심 12000", "expect": {"date": "2026-11-17", "amount": 12000, "direction": "out"}, "counterparty_contains": "점심"}
+{"id": "sentence_030", "today": "2026-11-17", "text": "어제 택시 8500", "expect": {"date": "2026-11-16", "amount": 8500, "direction": "out"}, "counterparty_contains": "택시"}
+{"id": "sentence_031", "today": "2026-11-17", "text": "지난주 일요일 결혼식 축의금 10만원", "expect": {"date": "2026-11-15", "amount": 100000, "direction": "out"}}
+{"id": "sentence_032", "today": "2026-11-17", "text": "환급금 23만 4천원 들어왔다", "expect": {"date": "2026-11-17", "amount": 234000, "direction": "in"}}
+{"id": "sentence_033", "today": "2026-11-17", "text": "아이 학원비 35만원 카드 결제", "expect": {"date": "2026-11-17", "amount": 350000, "direction": "out"}, "counterparty_contains": "학원"}
+{"id": "sentence_034", "today": "2026-11-17", "text": "책 두 권 2만 7천원", "expect": {"date": "2026-11-17", "amount": 27000, "direction": "out"}, "counterparty_contains": "책"}
+{"id": "sentence_035", "today": "2026-11-17", "text": "어제 이마트 12만 3,400원", "expect": {"date": "2026-11-16", "amount": 123400, "direction": "out"}, "counterparty_contains": "이마트"}
+{"id": "sentence_036", "today": "2026-11-17", "text": "오늘 헬스장 3개월 27만원", "expect": {"date": "2026-11-17", "amount": 270000, "direction": "out"}, "counterparty_contains": "헬스"}
+{"id": "sentence_037", "today": "2026-11-17", "text": "KTX 서울 부산 59,800원", "expect": {"date": "2026-11-17", "amount": 59800, "direction": "out"}, "counterparty_contains": "KTX"}
+{"id": "sentence_038", "today": "2026-11-17", "text": "전기요금 4만 1,230원 납부", "expect": {"date": "2026-11-17", "amount": 41230, "direction": "out"}, "counterparty_contains": "전기"}
+{"id": "sentence_039", "today": "2026-11-17", "text": "카카오페이로 더치페이 12,000원 받음", "expect": {"date": "2026-11-17", "amount": 12000, "direction": "in"}}
+{"id": "sentence_040", "today": "2026-11-17", "text": "엊그제 다이소 5천원", "expect": {"date": "2026-11-15", "amount": 5000, "direction": "out"}, "counterparty_contains": "다이소"}
