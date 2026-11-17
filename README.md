@@ -18,12 +18,12 @@
 | 검토 후 저장, 중복 · 취소 · 해외 결제 안내 | 동작 | 위젯 시험 |
 | 로컬 DB(SQLite, 웹은 SQLite WebAssembly) | 동작 | 단위 시험, 브라우저에서 새로 고침 뒤 유지 확인 |
 | 기기 쪽 동기화 엔진(대기열 · push · pull · 충돌) | 서버 없이 검증 | 규약을 흉내 낸 메모리 서버로 시험 |
-| 서버 SQL(스키마 · RLS · 동기화 함수) | 서버 없이 검증 | 로컬 PostgreSQL 16에서 시험 |
+| 서버 SQL(스키마 · RLS · 동기화 함수) | 서버 없이 검증 | PostgreSQL 16에서 시험 10건(CI에서도 돈다) |
 | 로그인, 실제 서버와의 동기화 | 아직 없음 | Supabase 프로젝트가 필요하다 |
 | 모르는 형식의 문자를 LLM으로 읽기 | 해석 경로와 평가 도구까지 동작 | PC의 llama.cpp 서버로 실측(`eval/README.md`). 앱 안에서 모델을 돌리는 연동은 아직 없다 |
 | 월별 총평, 자연어 조회 | 아직 없음 | |
 | 이미지 입력(VLM), 예산, 반복 거래, 내보내기 | 아직 없음 | |
-| Android APK, Windows 빌드 | 이 저장소의 CI가 만든다 | 로컬에서는 웹 빌드만 확인했다 |
+| Android APK, Windows 빌드 | CI에서 빌드된다 | 2026-11-17 CI 통과. 실제 휴대폰 · PC에서 실행해 보지는 못했다 |
 
 골든 세트의 일치율은 규칙을 만든 표본에 대한 회귀 검사다. 처음 보는 글에 대한 수치는 따로 지어낸 홀드아웃 표본으로 쟀고(`eval/README.md`), 모르는 형식의 문자에서 모든 항목이 맞은 초안은 규칙만 0/20, Qwen3.5-2B를 붙이면 13/20이었다. 실제 문자를 모아 다시 재야 한다.
 
@@ -76,6 +76,8 @@ flutter build web --release --no-web-resources-cdn
 cd app
 dart run build_runner build
 ```
+
+푸시할 때마다 CI(`.github/workflows/ci.yml`)가 시험, 서버 SQL 검증, 웹 · Android · Windows 빌드를 돌린다. 실행 결과 페이지의 Artifacts에서 시험용 APK(`gagyebu-android-arm64`, 디버그 키 서명)와 Windows 실행 폴더(`gagyebu-windows-x64`)를 내려받을 수 있다.
 
 서버 SQL은 임시 PostgreSQL 16 클러스터에서 시험한다.
 
