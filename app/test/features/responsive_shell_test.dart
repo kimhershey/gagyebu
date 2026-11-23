@@ -102,7 +102,7 @@ void main() {
 
         await tester.tap(find.text('내역').last);
         await tester.pumpAndSettle();
-        expect(find.text('이 달의 내역이 없다'), findsOneWidget);
+        expect(find.text('이 달의 내역이 없습니다'), findsOneWidget);
 
         await tester.tap(find.text('통계').last);
         await tester.pumpAndSettle();

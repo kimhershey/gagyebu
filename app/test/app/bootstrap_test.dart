@@ -42,7 +42,7 @@ void main() {
     await tester.pumpWidget(Bootstrap(open: open));
     await settle(tester);
     expect(find.text('설정'), findsWidgets);
-    expect(find.text('다른 탭에서 가계부를 열었다'), findsNothing);
+    expect(find.text('다른 탭에서 가계부를 열었습니다'), findsNothing);
     // 설정 화면으로 가 둔다.
     await tester.tap(find.text('설정').first);
     await tester.pumpAndSettle();
@@ -51,7 +51,7 @@ void main() {
     takenOver.complete();
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('다른 탭에서 가계부를 열었다'), findsOneWidget);
+    expect(find.text('다른 탭에서 가계부를 열었습니다'), findsOneWidget);
     // 앱 화면은 내려갔다. 오래된 사본으로 더 저장할 수 없다.
     expect(find.text('설정'), findsNothing);
     await expectLater(
@@ -63,7 +63,7 @@ void main() {
     await tester.tap(find.text('이 탭에서 계속 쓰기'));
     await tester.pumpAndSettle();
     expect(opened, hasLength(2));
-    expect(find.text('다른 탭에서 가계부를 열었다'), findsNothing);
+    expect(find.text('다른 탭에서 가계부를 열었습니다'), findsNothing);
     // 보던 화면(설정)으로 돌아온다.
     expect(find.text('월 시작일'), findsOneWidget);
 
@@ -77,7 +77,7 @@ void main() {
     );
     await settle(tester);
     expect(find.text('설정'), findsWidgets);
-    expect(find.text('다른 탭에서 가계부를 열었다'), findsNothing);
+    expect(find.text('다른 탭에서 가계부를 열었습니다'), findsNothing);
     await disposeApp(tester, services);
   });
 
@@ -92,7 +92,7 @@ void main() {
 
     await tester.pumpWidget(Bootstrap(open: open));
     await settle(tester);
-    expect(find.text('데이터를 열지 못했다'), findsOneWidget);
+    expect(find.text('데이터를 열지 못했습니다'), findsOneWidget);
     expect(find.textContaining('저장소를 열 수 없다'), findsOneWidget);
 
     await tester.tap(find.text('다시 시도'));

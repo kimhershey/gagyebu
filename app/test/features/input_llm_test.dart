@@ -134,7 +134,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('review-0')), findsNothing);
-    expect(find.text('거래가 아닌 안내문 1건은 뺐다'), findsOneWidget);
+    expect(find.text('거래가 아닌 안내문 1건은 뺐습니다'), findsOneWidget);
     await disposeApp(tester, services);
   });
 }

@@ -190,13 +190,13 @@ class _Insights extends StatelessWidget {
     final change = summary.expenseChange;
     final String compare;
     if (summary.previousExpense == 0 && summary.expense == 0) {
-      compare = '아직 지출이 없다';
+      compare = '아직 지출이 없습니다';
     } else if (change == 0) {
-      compare = '지난달과 지출이 같다';
+      compare = '지난달과 지출이 같습니다';
     } else if (change > 0) {
-      compare = '지난달보다 ${won(change)} 더 썼다';
+      compare = '지난달보다 ${won(change)} 더 썼습니다';
     } else {
-      compare = '지난달보다 ${won(-change)} 덜 썼다';
+      compare = '지난달보다 ${won(-change)} 덜 썼습니다';
     }
     return Wrap(
       spacing: 8,
@@ -260,7 +260,7 @@ class _CategoryCard extends StatelessWidget {
       child: top.isEmpty
           ? const EmptyState(
               icon: Icons.pie_chart_outline,
-              message: '이번 달 지출이 아직 없다',
+              message: '이번 달 지출이 아직 없습니다',
             )
           : Column(
               children: [
@@ -341,7 +341,7 @@ class _RecentCard extends StatelessWidget {
           if (list.isEmpty) {
             return EmptyState(
               icon: Icons.receipt_long_outlined,
-              message: '이번 달 내역이 없다.\n결제 문자를 붙여넣거나 직접 입력해 보자.',
+              message: '이번 달 내역이 없습니다.\n결제 문자를 붙여넣거나 직접 입력해 보세요.',
               action: FilledButton.tonal(
                 onPressed: () => openInput(context),
                 child: const Text('입력하기'),

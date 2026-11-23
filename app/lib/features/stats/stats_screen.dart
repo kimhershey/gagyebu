@@ -78,7 +78,7 @@ class _Categories extends StatelessWidget {
     return SectionCard(
       title: '분류별 지출 · ${won(summary.expense)}',
       child: summary.byCategory.isEmpty
-          ? const EmptyState(icon: Icons.pie_chart_outline, message: '지출이 없다')
+          ? const EmptyState(icon: Icons.pie_chart_outline, message: '지출이 없습니다')
           : Column(
               children: [
                 for (final c in summary.byCategory)
@@ -123,7 +123,7 @@ class _DailyChart extends StatelessWidget {
     return SectionCard(
       title: '날짜별 지출',
       child: max <= 0
-          ? const EmptyState(icon: Icons.bar_chart, message: '지출이 없다')
+          ? const EmptyState(icon: Icons.bar_chart, message: '지출이 없습니다')
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -181,8 +181,8 @@ class _DailyChart extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '가장 많이 쓴 날은 ${dayLabel(peakDay!)} ${won(max)}. '
-                  '하루 평균 ${won(summary.dailyAverageExpense)}, 무지출 ${summary.noSpendDays}일.',
+                  '가장 많이 쓴 날은 ${dayLabel(peakDay!)} ${won(max)}입니다. '
+                  '하루 평균은 ${won(summary.dailyAverageExpense)}, 무지출은 ${summary.noSpendDays}일입니다.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -203,7 +203,10 @@ class _Counterparties extends StatelessWidget {
     return SectionCard(
       title: '많이 쓴 곳',
       child: summary.topCounterparties.isEmpty
-          ? const EmptyState(icon: Icons.storefront_outlined, message: '지출이 없다')
+          ? const EmptyState(
+              icon: Icons.storefront_outlined,
+              message: '지출이 없습니다',
+            )
           : Column(
               children: [
                 for (final c in summary.topCounterparties)
@@ -234,7 +237,7 @@ class _Largest extends StatelessWidget {
     return SectionCard(
       title: '큰 지출',
       child: summary.largestExpenses.isEmpty
-          ? const EmptyState(icon: Icons.receipt_outlined, message: '지출이 없다')
+          ? const EmptyState(icon: Icons.receipt_outlined, message: '지출이 없습니다')
           : Column(
               children: [
                 for (final e in summary.largestExpenses)

@@ -55,7 +55,7 @@ class TransactionInput {
   final TxSource source;
   final String? aiModel;
 
-  /// 전액 취소된 거래. 집계에서 뺀다.
+  /// 전액 취소된 거래. 집계에서 뺍니다.
   final bool canceled;
 }
 
@@ -330,7 +330,7 @@ class LedgerRepository {
             .map((row) => row.read(t.id.count()) ?? 0)
             .getSingle();
     if (used > 0) {
-      throw StateError('이 자산을 쓰는 거래가 $used건 있어 지울 수 없다');
+      throw StateError('이 자산을 쓰는 거래가 $used건 있어 지울 수 없습니다');
     }
     await _softDelete('accounts', account.ledgerId, id, account.version);
   });
@@ -539,7 +539,7 @@ class LedgerRepository {
       db.transaction(() async {
         final existing = await transactionById(id);
         if (existing == null || existing.deletedAt != null) {
-          throw StateError('없는 거래다: $id');
+          throw StateError('없는 거래입니다: $id');
         }
         final now = _now();
         final companion = await _companionFor(existing.ledgerId, input, now);
@@ -628,7 +628,7 @@ class LedgerRepository {
       db.transaction(() async {
         final existing = await transactionById(id);
         if (existing == null || existing.deletedAt != null) {
-          throw StateError('없는 거래다: $id');
+          throw StateError('없는 거래입니다: $id');
         }
         final now = _now();
         await (db.update(
@@ -663,14 +663,14 @@ class LedgerRepository {
     TransactionInput input,
     DateTime now,
   ) async {
-    if (input.amount == 0) throw ArgumentError('금액이 0이다');
+    if (input.amount == 0) throw ArgumentError('금액이 0입니다');
     final account = await _accountOrThrow(ledgerId, input.accountId);
 
     AccountRow? toAccount;
     if (input.type == TxType.transfer) {
       final toId = input.toAccountId;
-      if (toId == null) throw ArgumentError('이체에는 받는 자산이 필요하다');
-      if (toId == input.accountId) throw ArgumentError('같은 자산으로는 이체할 수 없다');
+      if (toId == null) throw ArgumentError('이체에는 받는 자산이 필요합니다');
+      if (toId == input.accountId) throw ArgumentError('같은 자산으로는 이체할 수 없습니다');
       toAccount = await _accountOrThrow(ledgerId, toId);
     }
 
@@ -722,7 +722,7 @@ class LedgerRepository {
                   a.deletedAt.isNull(),
             ))
             .getSingleOrNull();
-    if (account == null) throw ArgumentError('없는 자산이다: $id');
+    if (account == null) throw ArgumentError('없는 자산입니다: $id');
     return account;
   }
 

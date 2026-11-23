@@ -50,7 +50,7 @@ class TransactionsScreen extends ConsumerWidget {
         editor ??
         EmptyState(
           icon: Icons.edit_note,
-          message: '거래를 고르면 여기서 고칠 수 있다',
+          message: '거래를 고르면 여기서 고칠 수 있습니다',
           action: FilledButton.tonal(
             onPressed: () => context.go('/transactions?new=expense'),
             child: const Text('새 거래'),
@@ -107,7 +107,7 @@ class _EditorHost extends ConsumerWidget {
         if (row == null || row.deletedAt != null) {
           return EmptyState(
             icon: Icons.search_off,
-            message: '거래를 찾지 못했다',
+            message: '거래를 찾지 못했습니다',
             action: TextButton(onPressed: onDone, child: const Text('목록으로')),
           );
         }
@@ -210,7 +210,7 @@ class _ListPaneState extends ConsumerState<_ListPane> {
               if (list.isEmpty) {
                 return EmptyState(
                   icon: Icons.receipt_long_outlined,
-                  message: query.isEmpty ? '이 달의 내역이 없다' : '검색 결과가 없다',
+                  message: query.isEmpty ? '이 달의 내역이 없습니다' : '검색 결과가 없습니다',
                 );
               }
               return widget.table

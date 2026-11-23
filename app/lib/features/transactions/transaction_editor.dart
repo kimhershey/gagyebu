@@ -129,7 +129,7 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('저장하지 못했다: $e')));
+          .showSnackBar(SnackBar(content: Text('저장하지 못했습니다: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -141,8 +141,8 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('이 거래를 지울까?'),
-        content: const Text('지운 거래는 다른 기기에서도 사라진다.'),
+        title: const Text('이 거래를 지울까요?'),
+        content: const Text('지운 거래는 다른 기기에서도 사라집니다.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -235,7 +235,7 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
             decoration: const InputDecoration(labelText: '금액', suffixText: '원'),
             validator: (value) {
               final amount = parseAmountInput(value ?? '');
-              if (amount == null || amount <= 0) return '금액을 넣어야 한다';
+              if (amount == null || amount <= 0) return '금액을 넣어야 합니다';
               return null;
             },
           ),
@@ -293,7 +293,7 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
                 DropdownMenuItem(value: a.id, child: Text(a.name)),
             ],
             onChanged: (value) => setState(() => _accountId = value),
-            validator: (value) => value == null ? '자산을 골라야 한다' : null,
+            validator: (value) => value == null ? '자산을 골라야 합니다' : null,
           ),
           const SizedBox(height: 12),
           if (_type == TxType.transfer)
@@ -310,8 +310,8 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
               ],
               onChanged: (value) => setState(() => _toAccountId = value),
               validator: (value) {
-                if (value == null) return '받는 자산을 골라야 한다';
-                if (value == _accountId) return '같은 자산으로는 이체할 수 없다';
+                if (value == null) return '받는 자산을 골라야 합니다';
+                if (value == _accountId) return '같은 자산으로는 이체할 수 없습니다';
                 return null;
               },
             )
@@ -350,7 +350,7 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('취소된 거래'),
-              subtitle: const Text('집계에서 뺀다'),
+              subtitle: const Text('집계에서 뺍니다'),
               value: _canceled,
               onChanged: (value) => setState(() => _canceled = value),
             ),

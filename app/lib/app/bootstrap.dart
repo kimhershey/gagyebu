@@ -97,10 +97,10 @@ class _BootstrapState extends State<Bootstrap> {
       return _BareScreen(
         child: _Notice(
           icon: Icons.tab_unselected,
-          title: '다른 탭에서 가계부를 열었다',
+          title: '다른 탭에서 가계부를 열었습니다',
           body:
-              '이 브라우저에서는 가계부를 탭 하나에서만 쓸 수 있다. 두 탭에서 함께 쓰면 '
-              '저장한 내용이 서로 덮어써진다. 그래서 이 탭은 멈췄다.',
+              '이 브라우저에서는 가계부를 탭 하나에서만 쓸 수 있습니다. 두 탭에서 함께 쓰면 '
+              '저장한 내용이 서로 덮어써집니다. 그래서 이 탭은 멈췄습니다.',
           action: '이 탭에서 계속 쓰기',
           onAction: () => setState(_open),
         ),
@@ -128,7 +128,7 @@ class _BootstrapState extends State<Bootstrap> {
               ? const CircularProgressIndicator()
               : _Notice(
                   icon: Icons.error_outline,
-                  title: '데이터를 열지 못했다',
+                  title: '데이터를 열지 못했습니다',
                   body: '$failure',
                   detail: kDebugMode ? '${snapshot.stackTrace}' : null,
                   action: '다시 시도',

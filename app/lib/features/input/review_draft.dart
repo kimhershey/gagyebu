@@ -38,7 +38,7 @@ class ReviewDraft {
   /// 원문의 카드 · 계좌 표기가 등록한 자산과 맞았는지. 아니면 기본 자산을 제안한 것이다.
   final bool accountMatched;
 
-  /// 취소 문자의 원 거래. 있으면 새 거래를 만들지 않고 이 거래를 취소로 표시한다.
+  /// 취소 문자의 원 거래. 있으면 새 거래를 만들지 않고 이 거래를 취소로 표시합니다.
   final TxRow? cancelTarget;
 
   /// 날짜 · 금액 · 상대방이 같은 기존 거래 수.
@@ -178,7 +178,7 @@ Future<int> saveReviewDrafts({
     final parsed = draft.parsed;
     final target = draft.cancelTarget;
     if (parsed.isCancel && target != null) {
-      // 취소 문자: 원 거래를 취소로 표시한다.
+      // 취소 문자: 원 거래를 취소로 표시합니다.
       await repository.setCanceled(target.id, canceled: true);
       saved++;
       continue;

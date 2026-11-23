@@ -81,7 +81,7 @@ void main() {
     );
     await tester.tap(find.byKey(const ValueKey('input-analyze')));
     await tester.pumpAndSettle();
-    expect(find.text('연도가 없어 2025년으로 채웠다'), findsOneWidget);
+    expect(find.text('연도가 없어 2025년으로 채웠습니다'), findsOneWidget);
     await disposeApp(tester, services);
   });
 
@@ -120,13 +120,13 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('거래가 아닌 안내문 1건은 뺐다'), findsOneWidget);
+    expect(find.text('거래가 아닌 안내문 1건은 뺐습니다'), findsOneWidget);
     expect(find.text('읽지 못한 내용 1건'), findsOneWidget);
     expect(find.text('1건 저장'), findsOneWidget);
     await disposeApp(tester, services);
   });
 
-  testWidgets('해외 결제는 원화 금액을 넣어야 저장된다', (tester) async {
+  testWidgets('해외 결제는 원화 금액을 넣어야 저장됩니다', (tester) async {
     final services = await createTestServices();
     await pumpApp(tester, services, size: desktop, location: '/input');
 
@@ -137,8 +137,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('input-analyze')));
     await tester.pumpAndSettle();
 
-    expect(find.text('저장할 거래가 없다'), findsOneWidget);
-    expect(find.textContaining('원화 금액을 넣어야 저장된다'), findsOneWidget);
+    expect(find.text('저장할 거래가 없습니다'), findsOneWidget);
+    expect(find.textContaining('원화 금액을 넣어야 저장됩니다'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const ValueKey('review-amount')),

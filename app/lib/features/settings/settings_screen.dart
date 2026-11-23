@@ -122,7 +122,7 @@ class _AccountsCard extends ConsumerWidget {
     try {
       await ref.read(repositoryProvider).deleteAccount(account.id);
       messenger.showSnackBar(
-        SnackBar(content: Text('${account.name}을(를) 지웠다')),
+        SnackBar(content: Text('${account.name}을(를) 지웠습니다')),
       );
     } on StateError catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
@@ -193,7 +193,7 @@ class _AccountDialogState extends ConsumerState<_AccountDialog> {
                     hintText: '예) 신한 체크카드',
                   ),
                   validator: (value) => (value == null || value.trim().isEmpty)
-                      ? '이름을 넣어야 한다'
+                      ? '이름을 넣어야 합니다'
                       : null,
                 ),
                 const SizedBox(height: 12),
@@ -221,7 +221,7 @@ class _AccountDialogState extends ConsumerState<_AccountDialog> {
                   decoration: const InputDecoration(
                     labelText: '식별 문구',
                     hintText: '예) 신한카드, 1234',
-                    helperText: '결제 문자의 카드 · 계좌 표기와 맞춰 자산을 고른다',
+                    helperText: '결제 문자의 카드 · 계좌 표기와 맞춰 자산을 고릅니다',
                     helperMaxLines: 2,
                   ),
                 ),
@@ -390,7 +390,7 @@ class _GeneralCard extends ConsumerWidget {
                   children: [
                     Text('월 시작일'),
                     Text(
-                      '급여일에 맞추면 그날부터 한 달로 집계한다',
+                      '급여일에 맞추면 그날부터 한 달로 집계합니다',
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
@@ -443,15 +443,15 @@ class _StorageCard extends ConsumerWidget {
             subtitle: Text(
               [
                 if (!services.persistent)
-                  '이 브라우저는 저장소를 허용하지 않아 창을 닫으면 내용이 사라진다'
+                  '이 브라우저는 저장소를 허용하지 않아 창을 닫으면 내용이 사라집니다'
                 else if (kIsWeb)
-                  '이 브라우저에만 저장된다. 다른 기기나 다른 브라우저에서는 보이지 않는다'
+                  '이 브라우저에만 저장됩니다. 다른 기기나 다른 브라우저에서는 보이지 않습니다'
                 else
-                  '이 기기에만 저장된다',
+                  '이 기기에만 저장됩니다',
                 // 들어올 때마다 날짜가 오늘로 바뀌어 있으면 브라우저가 저장소를 비운 것이다.
                 if (services.persistent && started != null)
                   '${started.year}년 ${started.month}월 ${started.day}일부터 '
-                      '여기에 저장하고 있다',
+                      '여기에 저장하고 있습니다',
               ].join('\n'),
             ),
           ),
@@ -459,11 +459,11 @@ class _StorageCard extends ConsumerWidget {
             dense: true,
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.cloud_off_outlined),
-            title: const Text('로그인은 아직 없다'),
+            title: const Text('로그인은 아직 없습니다'),
             subtitle: Text(
               pending == 0
-                  ? '다음 단계에서 Google 로그인과 기기 간 동기화가 들어온다'
-                  : '기기 간 동기화가 들어오면 올릴 변경 $pending건을 모아 두었다',
+                  ? '다음 단계에서 Google 로그인과 기기 간 동기화가 들어옵니다'
+                  : '기기 간 동기화가 들어오면 올릴 변경 $pending건을 모아 두었습니다',
             ),
           ),
           Align(

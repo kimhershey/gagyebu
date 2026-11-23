@@ -48,7 +48,7 @@ class _InputPanelState extends ConsumerState<InputPanel> {
     if (text == null || text.trim().isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('클립보드에 글자가 없다')));
+          .showSnackBar(const SnackBar(content: Text('클립보드에 글자가 없습니다')));
       return;
     }
     _text.text = text;
@@ -126,12 +126,12 @@ class _InputPanelState extends ConsumerState<InputPanel> {
         ref.read(selectedPeriodProvider.notifier).show(first.date);
       }
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('$saved건을 저장했다')));
+          .showSnackBar(SnackBar(content: Text('$saved건을 저장했습니다')));
       widget.onClose();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('저장하지 못했다: $e')));
+          .showSnackBar(SnackBar(content: Text('저장하지 못했습니다: $e')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -173,7 +173,7 @@ class _InputPanelState extends ConsumerState<InputPanel> {
                 maxLines: 8,
                 decoration: const InputDecoration(
                   hintText:
-                      '한 줄로 적거나 결제 문자를 붙여넣는다\n'
+                      '한 줄로 적거나 결제 문자를 붙여넣으세요\n'
                       '예) 어제 점심 김밥천국 8천원 카드로',
                 ),
               ),
@@ -203,7 +203,7 @@ class _InputPanelState extends ConsumerState<InputPanel> {
                 if (drafts.isEmpty && _unknown.isEmpty && _notices.isEmpty)
                   const EmptyState(
                     icon: Icons.help_outline,
-                    message: '읽을 내용이 없다',
+                    message: '읽을 내용이 없습니다',
                   ),
                 for (var i = 0; i < drafts.length; i++)
                   Padding(
@@ -221,7 +221,7 @@ class _InputPanelState extends ConsumerState<InputPanel> {
                   _InfoBox(
                     key: const ValueKey('notices'),
                     icon: Icons.filter_alt_outlined,
-                    title: '거래가 아닌 안내문 ${_notices.length}건은 뺐다',
+                    title: '거래가 아닌 안내문 ${_notices.length}건은 뺐습니다',
                     lines: [for (final n in _notices) _oneLine(n.raw)],
                   ),
                 if (_unknown.isNotEmpty)
@@ -230,7 +230,7 @@ class _InputPanelState extends ConsumerState<InputPanel> {
                     icon: Icons.help_outline,
                     title: '읽지 못한 내용 ${_unknown.length}건',
                     lines: [for (final u in _unknown) _oneLine(u.raw)],
-                    footer: '아는 형식이 아니다. 내역 화면의 직접 입력으로 넣을 수 있다.',
+                    footer: '아는 형식이 아닙니다. 내역 화면의 직접 입력으로 넣을 수 있습니다.',
                   ),
               ],
             ],
@@ -242,7 +242,7 @@ class _InputPanelState extends ConsumerState<InputPanel> {
             child: FilledButton(
               key: const ValueKey('input-save'),
               onPressed: (_busy || savable == 0) ? null : _save,
-              child: Text(savable == 0 ? '저장할 거래가 없다' : '$savable건 저장'),
+              child: Text(savable == 0 ? '저장할 거래가 없습니다' : '$savable건 저장'),
             ),
           ),
       ],
@@ -365,36 +365,36 @@ class _ReviewCardState extends State<ReviewCard> {
       if (parsed.isCancel && draft.cancelTarget != null)
         (
           Icons.undo,
-          '취소 문자다. 저장하면 ${monthDay(draft.cancelTarget!.occurredOn)} '
+          '취소 문자입니다. 저장하면 ${monthDay(draft.cancelTarget!.occurredOn)} '
               '${draft.cancelTarget!.receiver ?? ''} ${won(draft.cancelTarget!.amount)} '
-              '거래를 취소로 표시한다',
+              '거래를 취소로 표시합니다',
           false,
         ),
       if (parsed.isCancel && draft.cancelTarget == null)
-        (Icons.undo, '취소 문자다. 원 거래를 찾지 못해 환불(음수)로 적는다', true),
+        (Icons.undo, '취소 문자입니다. 원 거래를 찾지 못해 환불(음수)로 적습니다', true),
       if (draft.duplicates > 0)
-        (Icons.copy_all_outlined, '같은 날짜 · 금액 · 상대방의 거래가 이미 있다', true),
+        (Icons.copy_all_outlined, '같은 날짜 · 금액 · 상대방의 거래가 이미 있습니다', true),
       if (parsed.warnings.contains(ParseWarning.needsKrwAmount))
         (
           Icons.currency_exchange,
-          '해외 결제 ${parsed.originalAmount} ${parsed.currency}. 원화 금액을 넣어야 저장된다',
+          '해외 결제 ${parsed.originalAmount} ${parsed.currency}. 원화 금액을 넣어야 저장됩니다',
           true,
         ),
       if (parsed.warnings.contains(ParseWarning.possibleCardPayment))
-        (Icons.credit_card, '카드대금 출금으로 보인다. 카드 사용분과 두 번 세지 않게 확인하자', true),
+        (Icons.credit_card, '카드대금 출금으로 보입니다. 카드 사용분과 두 번 세지 않게 확인하세요', true),
       // 대부분의 문자는 연도가 없다. 올해로 채운 흔한 경우는 알리지 않고,
       // 지난해로 넘어간 경우(1월에 붙여넣은 12월 문자)만 알린다.
       if (parsed.warnings.contains(ParseWarning.yearInferred) &&
           draft.date.year != widget.currentYear)
-        (Icons.event, '연도가 없어 ${draft.date.year}년으로 채웠다', true),
+        (Icons.event, '연도가 없어 ${draft.date.year}년으로 채웠습니다', true),
       if (parsed.warnings.contains(ParseWarning.dateFromNow))
-        (Icons.event, '날짜가 없어 오늘로 채웠다', false),
+        (Icons.event, '날짜가 없어 오늘로 채웠습니다', false),
       if (parsed.warnings.contains(ParseWarning.amountWithoutUnit))
-        (Icons.payments_outlined, '금액에 ‘원’이 없었다. 숫자를 확인하자', false),
+        (Icons.payments_outlined, '금액에 ‘원’이 없었습니다. 숫자를 확인하세요', false),
       if (!draft.accountMatched && parsed.accountText != null)
         (
           Icons.account_balance_wallet_outlined,
-          '‘${parsed.accountText}’에 맞는 자산이 없어 기본 자산을 골랐다',
+          '‘${parsed.accountText}’에 맞는 자산이 없어 기본 자산을 골랐습니다',
           false,
         ),
     ];

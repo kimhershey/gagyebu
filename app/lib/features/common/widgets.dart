@@ -187,7 +187,7 @@ class AsyncBody<T> extends StatelessWidget {
     if (value.hasError) {
       return EmptyState(
         icon: Icons.error_outline,
-        message: '불러오지 못했다\n${value.error}',
+        message: '불러오지 못했습니다\n${value.error}',
       );
     }
     return const Padding(
