@@ -5,7 +5,8 @@ import 'router.dart';
 
 const _seed = Color(0xFF2F6FED);
 
-ThemeData _theme(Brightness brightness) {
+/// 앱의 테마. 앱이 뜨기 전의 화면(여는 중, 안내)도 같은 색과 글꼴을 쓴다.
+ThemeData appTheme(Brightness brightness) {
   final scheme = ColorScheme.fromSeed(seedColor: _seed, brightness: brightness);
   return ThemeData(
     colorScheme: scheme,
@@ -42,8 +43,8 @@ class _GagyebuAppState extends State<GagyebuApp> {
     return MaterialApp.router(
       title: '가계부',
       debugShowCheckedModeBanner: false,
-      theme: _theme(Brightness.light),
-      darkTheme: _theme(Brightness.dark),
+      theme: appTheme(Brightness.light),
+      darkTheme: appTheme(Brightness.dark),
       locale: const Locale('ko'),
       supportedLocales: const [Locale('ko')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

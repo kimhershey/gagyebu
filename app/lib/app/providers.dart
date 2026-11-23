@@ -15,6 +15,8 @@ class AppServices {
     required this.ledgerId,
     required this.storage,
     required this.persistent,
+    this.startedAt,
+    this.takenOver,
   });
 
   final AppDatabase db;
@@ -28,6 +30,14 @@ class AppServices {
 
   /// 앱을 닫아도 데이터가 남는지.
   final bool persistent;
+
+  /// 이 기기(브라우저)에서 가계부를 처음 만든 때. 브라우저가 저장소를 비웠는지 알아보는 데
+  /// 쓴다: 비워졌다면 다시 들어올 때마다 이 값이 새로 잡힌다.
+  final DateTime? startedAt;
+
+  /// 다른 탭이 같은 저장소를 열어 이 탭이 멈춰야 할 때 끝난다. 그런 일이 없는 환경이면
+  /// null이다.
+  final Future<void>? takenOver;
 }
 
 /// [Bootstrap]이 준비가 끝난 값으로 덮어쓴다.

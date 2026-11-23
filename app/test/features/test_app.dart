@@ -22,6 +22,7 @@ Future<AppServices> createTestServices() async {
     ledgerId: ledgerId,
     storage: '시험용 메모리',
     persistent: true,
+    startedAt: testNow,
   );
 }
 

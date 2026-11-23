@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -425,6 +426,7 @@ class _StorageCard extends ConsumerWidget {
     final services = ref.watch(appServicesProvider);
     final pending = ref.watch(pendingChangesProvider).value ?? 0;
     final theme = Theme.of(context);
+    final started = services.startedAt?.toLocal();
     return SectionCard(
       title: '저장과 동기화',
       child: Column(
@@ -439,20 +441,29 @@ class _StorageCard extends ConsumerWidget {
             ),
             title: Text(services.storage),
             subtitle: Text(
-              services.persistent
-                  ? '거래는 이 기기에 먼저 저장된다'
-                  : '이 브라우저는 저장소를 허용하지 않아 창을 닫으면 내용이 사라진다',
+              [
+                if (!services.persistent)
+                  '이 브라우저는 저장소를 허용하지 않아 창을 닫으면 내용이 사라진다'
+                else if (kIsWeb)
+                  '이 브라우저에만 저장된다. 다른 기기나 다른 브라우저에서는 보이지 않는다'
+                else
+                  '이 기기에만 저장된다',
+                // 들어올 때마다 날짜가 오늘로 바뀌어 있으면 브라우저가 저장소를 비운 것이다.
+                if (services.persistent && started != null)
+                  '${started.year}년 ${started.month}월 ${started.day}일부터 '
+                      '여기에 저장하고 있다',
+              ].join('\n'),
             ),
           ),
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.cloud_off_outlined),
-            title: const Text('로그인하지 않음'),
+            title: const Text('로그인은 아직 없다'),
             subtitle: Text(
               pending == 0
-                  ? '로그인하면 다른 기기와 동기화한다(준비 중)'
-                  : '서버로 보낼 변경 $pending건이 기다리고 있다(로그인 준비 중)',
+                  ? '다음 단계에서 Google 로그인과 기기 간 동기화가 들어온다'
+                  : '기기 간 동기화가 들어오면 올릴 변경 $pending건을 모아 두었다',
             ),
           ),
           Align(
