@@ -7,9 +7,13 @@ import 'package:material_ui/material_ui.dart';
 import '../data/db/connection/connection.dart';
 import '../data/db/database.dart';
 import '../data/repositories/ledger_repository.dart';
+import '../data/server/server_config.dart';
+import '../data/server/server_connection.dart';
+import '../data/server/supabase_connection.dart';
 import 'app.dart';
 import 'providers.dart';
 import 'router.dart';
+import 'sync_controller.dart';
 
 /// 로컬 DB를 열고 가계부를 준비한다.
 Future<AppServices> openAppServices() async {
@@ -28,7 +32,20 @@ Future<AppServices> openAppServices() async {
     persistent: opened.persistent,
     startedAt: ledger?.createdAt,
     takenOver: opened.takenOver,
+    server: await _connectServer(),
   );
+}
+
+/// 서버 주소를 넣은 빌드면 서버에 연결한다. 연결하지 못해도 앱은 기기 안에서 동작한다.
+Future<ServerConnection?> _connectServer() async {
+  final config = ServerConfig.fromEnvironment();
+  if (config == null) return null;
+  try {
+    return await connectSupabase(config);
+  } catch (e) {
+    debugPrint('서버에 연결하지 못했다: $e');
+    return null;
+  }
 }
 
 /// 앱에 넣은 글꼴의 라이선스를 라이선스 화면에 올린다.
@@ -59,6 +76,9 @@ class _BootstrapState extends State<Bootstrap> {
   /// 몇 번째로 연 것인지. 예전에 연 것의 신호를 가려낸다.
   int _opened = 0;
 
+  /// 지금 화면이 쓰고 있는 연결.
+  AppServices? _current;
+
   /// 화면 이동 상태. 연결을 다시 열어도 보던 화면이 그대로이게 여기서 들고 있다.
   /// (웹 엔진은 앱이 주소를 넘겨받은 뒤에는 시작 주소를 '/'로 돌려 버린다.)
   GoRouter? _router;
@@ -78,10 +98,22 @@ class _BootstrapState extends State<Bootstrap> {
   void _open() {
     final opened = ++_opened;
     _takenOver = false;
-    final services = _services = widget.open();
+    final previous = _current;
+    _current = null;
+    final services = _services = () async {
+      if (previous != null) {
+        // 다시 여는 경우다. 화면이 내려간 다음에 앞선 연결을 닫고 새로 연다.
+        await WidgetsBinding.instance.endOfFrame;
+        await previous.db.close();
+      }
+      return widget.open();
+    }();
     services.then((services) {
+      if (opened != _opened) return;
+      _current = services;
       services.takenOver?.then((_) {
         if (!mounted || opened != _opened) return;
+        _current = null;
         setState(() => _takenOver = true);
         // 화면이 내려간 다음에 닫는다. 이 탭이 오래된 사본으로 다시 저장하지 못하게 한다.
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -116,8 +148,20 @@ class _BootstrapState extends State<Bootstrap> {
           return ProviderScope(
             // 다시 열면 앞선 연결을 쓰던 상태를 모두 버린다.
             key: ObjectKey(services),
-            overrides: [appServicesProvider.overrideWithValue(services)],
-            child: GagyebuApp(router: _router ??= createRouter()),
+            overrides: [
+              appServicesProvider.overrideWithValue(services),
+              appRestartProvider.overrideWithValue(() {
+                if (mounted) setState(_open);
+              }),
+            ],
+            // 화면이 떠 있는 동안 로그인 상태를 따라가며 동기화한다.
+            child: Consumer(
+              builder: (context, ref, child) {
+                ref.watch(syncControllerProvider);
+                return child!;
+              },
+              child: GagyebuApp(router: _router ??= createRouter()),
+            ),
           );
         }
         // 준비하는 동안에는 Navigator가 없는 맨 화면을 쓴다. 여기서 MaterialApp을 쓰면

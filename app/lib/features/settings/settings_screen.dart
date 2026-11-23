@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/providers.dart';
+import '../../app/sync_controller.dart';
 import '../../core/breakpoints.dart';
 import '../../core/formatters.dart';
 import '../../data/db/database.dart';
@@ -424,7 +425,6 @@ class _StorageCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final services = ref.watch(appServicesProvider);
-    final pending = ref.watch(pendingChangesProvider).value ?? 0;
     final theme = Theme.of(context);
     final started = services.startedAt?.toLocal();
     return SectionCard(
@@ -455,17 +455,7 @@ class _StorageCard extends ConsumerWidget {
               ].join('\n'),
             ),
           ),
-          ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.cloud_off_outlined),
-            title: const Text('로그인은 아직 없습니다'),
-            subtitle: Text(
-              pending == 0
-                  ? '다음 단계에서 Google 로그인과 기기 간 동기화가 들어옵니다'
-                  : '기기 간 동기화가 들어오면 올릴 변경 $pending건을 모아 두었습니다',
-            ),
-          ),
+          const _AccountTile(),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
@@ -477,5 +467,139 @@ class _StorageCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+/// 로그인 상태와 동기화 상태. 로그인 · 로그아웃 · 지금 동기화.
+class _AccountTile extends ConsumerWidget {
+  const _AccountTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(syncControllerProvider);
+    final pending = ref.watch(pendingChangesProvider).value ?? 0;
+    final controller = ref.read(syncControllerProvider.notifier);
+    final canSignIn =
+        ref.watch(appServicesProvider).server?.auth.canSignInHere ?? false;
+    final theme = Theme.of(context);
+
+    Widget tile(IconData icon, String title, String subtitle, {Color? color}) =>
+        ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(icon, color: color),
+          title: Text(title),
+          subtitle: Text(subtitle),
+        );
+    Widget actions(List<Widget> buttons) => Padding(
+      padding: const EdgeInsets.only(left: 40, bottom: 4),
+      child: Wrap(spacing: 8, runSpacing: 4, children: buttons),
+    );
+
+    switch (status.phase) {
+      case SyncPhase.unavailable:
+        return tile(
+          Icons.cloud_off_outlined,
+          '로그인은 아직 없습니다',
+          pending == 0
+              ? '다음 단계에서 Google 로그인과 기기 간 동기화가 들어옵니다'
+              : '기기 간 동기화가 들어오면 올릴 변경 $pending건을 모아 두었습니다',
+        );
+      case SyncPhase.signedOut:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            tile(
+              Icons.cloud_off_outlined,
+              '로그인하지 않았습니다',
+              [
+                canSignIn
+                    ? '로그인하면 이 가계부를 계정에 올리고 다른 기기와 맞춥니다'
+                    : '이 앱에서의 로그인은 준비 중입니다. 지금은 웹 앱에서 로그인할 수 있습니다',
+                if (status.error != null) '로그인하지 못했습니다: ${status.error}',
+              ].join('\n'),
+            ),
+            if (canSignIn)
+              actions([
+                FilledButton.tonalIcon(
+                  key: const ValueKey('sign-in'),
+                  onPressed: controller.signIn,
+                  icon: const Icon(Icons.login, size: 18),
+                  label: const Text('Google로 로그인'),
+                ),
+              ]),
+          ],
+        );
+      case SyncPhase.differentAccount:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            tile(
+              Icons.warning_amber,
+              '이 기기에는 다른 계정의 가계부가 있습니다',
+              '${status.user?.email ?? '이 계정'}(으)로 계속하려면 이 기기의 가계부를 지우고 '
+                  '계정의 가계부를 받아야 합니다.'
+                  '${pending > 0 ? ' 아직 올리지 않은 변경 $pending건은 사라집니다.' : ''}',
+              color: theme.colorScheme.error,
+            ),
+            actions([
+              TextButton(
+                onPressed: controller.signOut,
+                child: const Text('로그아웃'),
+              ),
+              FilledButton.tonal(
+                key: const ValueKey('replace-local'),
+                onPressed: controller.replaceLocalLedger,
+                child: const Text('지우고 받기'),
+              ),
+            ]),
+          ],
+        );
+      case SyncPhase.syncing:
+      case SyncPhase.idle:
+      case SyncPhase.failed:
+        final last = status.lastSyncedAt?.toLocal();
+        final waiting = pending > 0 ? ' · 올릴 변경 $pending건' : '';
+        final (icon, line) = switch (status.phase) {
+          SyncPhase.syncing => (Icons.cloud_sync_outlined, '동기화하는 중입니다'),
+          SyncPhase.failed => (
+            Icons.cloud_off_outlined,
+            '동기화하지 못했습니다. 잠시 뒤 다시 시도합니다$waiting\n${status.error ?? ''}',
+          ),
+          _ => (
+            Icons.cloud_done_outlined,
+            last == null
+                ? '동기화했습니다$waiting'
+                : '${formatTimeOfDay(last)}에 동기화했습니다$waiting',
+          ),
+        };
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            tile(
+              icon,
+              status.user?.email ?? '로그인했습니다',
+              line,
+              color: status.phase == SyncPhase.failed
+                  ? theme.colorScheme.error
+                  : null,
+            ),
+            actions([
+              TextButton(
+                key: const ValueKey('sync-now'),
+                onPressed: status.phase == SyncPhase.syncing
+                    ? null
+                    : controller.syncNow,
+                child: const Text('지금 동기화'),
+              ),
+              TextButton(
+                key: const ValueKey('sign-out'),
+                onPressed: controller.signOut,
+                child: const Text('로그아웃'),
+              ),
+            ]),
+          ],
+        );
+    }
   }
 }

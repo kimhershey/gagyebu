@@ -176,6 +176,18 @@ sync_pull(p_ledger_id uuid, p_since bigint, p_limit integer default 500) returns
 - 트리거를 설치하기 전에 가입한 사용자에게는 가계부가 만들어지지 않는다.
 - `purge_tombstones()`를 주기적으로 부르는 예약은 아직 없다.
 
+## 프로젝트를 만들어 앱에 연결하기
+
+1. Supabase에서 프로젝트를 만든다. 리전은 서울(ap-northeast-2).
+2. `migrations/`의 파일 네 개를 번호 순서대로 적용한다. 대시보드의 SQL Editor에 붙여 넣어 실행하거나 Supabase CLI의 `supabase db push`를 쓴다.
+3. Google 로그인을 켠다.
+   - Google Cloud Console에서 OAuth 클라이언트(웹 애플리케이션)를 만든다. 승인된 리디렉션 URI에 `https://<프로젝트>.supabase.co/auth/v1/callback`을 넣는다.
+   - Supabase 대시보드의 Authentication → Providers → Google에 클라이언트 ID와 비밀값을 넣는다.
+   - Authentication → URL Configuration의 Redirect URLs에 웹 앱 주소(예: `https://kimhershey.github.io/gagyebu/`)를 넣는다. 로컬에서 시험하려면 `http://localhost:*`도 넣는다.
+4. Project URL과 publishable 키를 앱 빌드에 넣는다(저장소 `README.md`의 "개발"). 이 두 값은 공개해도 된다. service_role 키와 DB 비밀번호는 어디에도 넣지 않는다.
+
+앱은 로그인하면 `profiles`에서 제 가계부를 찾고(`id = auth.uid()`), `sync_push` · `sync_pull`만 부른다. 처음 로그인한 기기는 그동안 기기에 적어 둔 거래 · 자산 · 분류를 계정의 가계부로 옮긴다. 이름과 종류가 같은 기본 분류 · 자산은 서버 것을 쓰고, 나머지는 새 행으로 올린다(`app/lib/data/sync/ledger_adoption.dart`).
+
 ## 실제 Supabase에서 확인할 것
 
 로컬 시험은 Supabase가 제공하는 것을 스텁(`tests/00_supabase_stub.sql`)으로 흉내 냈다. 프로젝트에 적용한 뒤 아래를 확인한다.

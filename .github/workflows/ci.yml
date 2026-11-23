@@ -17,6 +17,12 @@ concurrency:
 
 env:
   FLUTTER_VERSION: '3.50.0'
+  # 서버(Supabase) 주소와 공개 키. 저장소 변수(Settings → Secrets and variables → Actions →
+  # Variables)에 SUPABASE_URL과 SUPABASE_PUBLISHABLE_KEY를 넣으면 로그인과 동기화가 켜진 앱이
+  # 빌드된다. 비워 두면 기기 안에서만 동작하는 앱이 된다. 둘 다 공개해도 되는 값이다.
+  SERVER_DEFINES: >-
+    --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }}
+    --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }}
 
 jobs:
   test:
@@ -73,7 +79,7 @@ jobs:
       - name: sqlite3.wasm과 drift_worker.js 준비
         run: dart run tool/prepare_web_assets.dart
       # 엔진 파일을 CDN에서 받지 않고 앱과 함께 올린다. 앱이 다른 서버에 접속하지 않게 하기 위해서다.
-      - run: flutter build web --release --no-web-resources-cdn --base-href "/${{ github.event.repository.name }}/"
+      - run: flutter build web --release --no-web-resources-cdn --base-href "/${{ github.event.repository.name }}/" ${{ env.SERVER_DEFINES }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/build/web
@@ -150,7 +156,7 @@ jobs:
           cache: true
       - run: flutter pub get
       # 서명 키를 정하기 전까지는 디버그 키로 서명한 시험용 APK다.
-      - run: flutter build apk --release --target-platform android-arm64
+      - run: flutter build apk --release --target-platform android-arm64 ${{ env.SERVER_DEFINES }}
       - uses: actions/upload-artifact@v4
         with:
           name: gagyebu-android-arm64
@@ -171,7 +177,7 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: flutter build windows --release
+      - run: flutter build windows --release ${{ env.SERVER_DEFINES }}
       # 설치 프로그램(Inno Setup)은 패키징 단계에서 붙인다. 지금은 실행 폴더를 그대로 올린다.
       - uses: actions/upload-artifact@v4
         with:

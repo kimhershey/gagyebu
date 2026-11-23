@@ -19,7 +19,8 @@
 | 로컬 DB(SQLite, 웹은 SQLite WebAssembly) | 동작 | 단위 시험, 브라우저에서 새로 고침 뒤 유지 확인 |
 | 기기 쪽 동기화 엔진(대기열 · push · pull · 충돌) | 서버 없이 검증 | 규약을 흉내 낸 메모리 서버로 시험 |
 | 서버 SQL(스키마 · RLS · 동기화 함수) | 서버 없이 검증 | PostgreSQL 16에서 시험 10건(CI에서도 돈다) |
-| 로그인, 실제 서버와의 동기화 | 아직 없음 | Supabase 프로젝트가 필요하다 |
+| 로그인(Google), 서버 동기화, 첫 로그인 때 기기의 가계부를 계정으로 옮기기 | 서버 없이 검증 | 가짜 로그인 · 가짜 서버로 전체 흐름 시험. 실제 Supabase 프로젝트로는 아직 돌려 보지 못했다 |
+| Windows · Android 앱에서의 로그인 | 아직 없음 | 브라우저에서 로그인하고 앱으로 돌아오는 주소 등록이 남았다. 지금은 웹에서만 로그인한다 |
 | 모르는 형식의 문자를 LLM으로 읽기 | 해석 경로와 평가 도구까지 동작 | PC의 llama.cpp 서버로 실측(`eval/README.md`). 앱 안에서 모델을 돌리는 연동은 아직 없다 |
 | 월별 총평, 자연어 조회 | 아직 없음 | |
 | 이미지 입력(VLM), 예산, 반복 거래, 내보내기 | 아직 없음 | |
@@ -33,7 +34,7 @@
 app/                 Flutter 앱 (lib/, android/, windows/, web/)
   lib/core/          날짜, 형식, 창 너비 등급
   lib/domain/        열거형, 기본 분류, 월 기간, 월 집계
-  lib/data/          로컬 DB(Drift), 저장소, 동기화 엔진
+  lib/data/          로컬 DB(Drift), 저장소, 동기화 엔진, 서버 연결(server/)
   lib/ai/            거래 초안, 해석 순서(input_interpreter)
   lib/ai/text/       문자 형식 규칙, 금액 · 날짜 · 이름 후보 규칙
   lib/ai/llm/        모델에 보낼 요청(프롬프트 · 문법), 출력 검증, 추론 서버 연결
@@ -78,6 +79,15 @@ dart run build_runner build
 ```
 
 푸시할 때마다 CI(`.github/workflows/ci.yml`)가 시험, 서버 SQL 검증, 웹 · Android · Windows 빌드를 돌린다. 실행 결과 페이지의 Artifacts에서 시험용 APK(`gagyebu-android-arm64`, 디버그 키 서명)와 Windows 실행 폴더(`gagyebu-windows-x64`)를 내려받을 수 있다.
+
+서버(Supabase) 주소와 공개 키를 넣어 빌드하면 로그인과 동기화가 켜진다. 넣지 않으면 기기 안에서만 동작한다. 두 값은 공개해도 되는 값이고, service_role 키와 DB 비밀번호는 앱이나 저장소에 넣지 않는다.
+
+```bash
+cd app
+flutter run -d chrome --dart-define=SUPABASE_URL=https://xxxx.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxx
+```
+
+CI는 저장소 변수 `SUPABASE_URL`과 `SUPABASE_PUBLISHABLE_KEY`를 읽어 같은 방식으로 빌드한다. 서버 쪽 준비(마이그레이션 적용, Google 로그인 설정)는 `supabase/README.md`에 있다.
 
 서버 SQL은 임시 PostgreSQL 16 클러스터에서 시험한다.
 

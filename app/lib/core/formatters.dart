@@ -54,3 +54,10 @@ String? periodRangeLabel(MonthPeriod period) {
 
 /// 0.256 → '26%'
 String percent(double ratio) => '${(ratio * 100).round()}%';
+
+/// '오후 3:07' 꼴의 시각.
+String formatTimeOfDay(DateTime time) {
+  final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
+  final minute = time.minute.toString().padLeft(2, '0');
+  return '${time.hour < 12 ? '오전' : '오후'} $hour:$minute';
+}

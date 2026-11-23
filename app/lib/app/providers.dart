@@ -4,6 +4,7 @@ import '../ai/llm/llm_engine.dart';
 import '../core/local_date.dart';
 import '../data/db/database.dart';
 import '../data/repositories/ledger_repository.dart';
+import '../data/server/server_connection.dart';
 import '../domain/month_period.dart';
 import '../domain/month_summary.dart';
 
@@ -17,6 +18,7 @@ class AppServices {
     required this.persistent,
     this.startedAt,
     this.takenOver,
+    this.server,
   });
 
   final AppDatabase db;
@@ -38,12 +40,19 @@ class AppServices {
   /// 다른 탭이 같은 저장소를 열어 이 탭이 멈춰야 할 때 끝난다. 그런 일이 없는 환경이면
   /// null이다.
   final Future<void>? takenOver;
+
+  /// 서버 연결(로그인 · 동기화). 서버 주소를 넣지 않은 빌드에는 없다.
+  final ServerConnection? server;
 }
 
 /// [Bootstrap]이 준비가 끝난 값으로 덮어쓴다.
 final appServicesProvider = Provider<AppServices>(
   (ref) => throw StateError('appServicesProvider를 덮어써야 한다'),
 );
+
+/// 앱을 다시 연다: 로컬 DB를 닫았다 열고 화면 상태를 새로 잡는다. 로그인해서 쓰는 가계부가
+/// 바뀌었을 때 부른다. [Bootstrap]이 채운다.
+final appRestartProvider = Provider<void Function()>((ref) => () {});
 
 final repositoryProvider = Provider<LedgerRepository>(
   (ref) => ref.watch(appServicesProvider).repository,
