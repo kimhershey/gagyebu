@@ -47,12 +47,18 @@ Android · Windows 앱은 **빌드가 되는 것까지만** 확인했다. 기기
 | --- | --- | --- | --- |
 | 16 | `desktop_drop` 0.8.1 이상을 쓰면 MPL 라이선스인 `dbus`가 따라 들어온다 | 새 버전이 Linux 쪽 구현에 `dbus`를 쓴다 | 0.8.0에 묶어 둔다(`pubspec.yaml`의 `'>=0.8.0 <0.8.1'`). 버전을 올릴 때 라이선스 검사(`dart run tool/check_licenses.dart`)가 막는다 |
 
-### 1.4 작업하다 낸 실수
+### 1.4 CI 빌드
+
+| # | 증상 | 원인 | 고친 방법 |
+| --- | --- | --- | --- |
+| 17 | Android 빌드가 `:file_selector_android:lintVitalAnalyzeRelease`에서 실패한다("Unexpected failure during lint analysis") | 릴리스용 검사 도구(lint)가 JDK 17에서 JDK 21 전용 기능(`List.removeLast()`)을 불러 스스로 죽는다. 파일 고르기 플러그인의 자바 주석을 읽을 때만 난다. 우리 코드의 문제가 아니다 | 플러그인 모듈에는 릴리스용 lint를 돌리지 않는다(`app/android/build.gradle.kts`). 앱 모듈의 lint는 그대로 돈다 |
+
+### 1.5 작업하다 낸 실수
 
 | # | 무엇 | 다시 하지 않으려면 |
 | --- | --- | --- |
-| 17 | 웹을 빌드할 때 서버 키의 이름을 틀리게 줘서(`SUPABASE_ANON_KEY`) 로그인 없는 앱이 만들어졌다. 오류 없이 빌드된다 | 이름은 `SUPABASE_URL`과 `SUPABASE_PUBLISHABLE_KEY`다. 둘 중 하나라도 비면 **조용히** 로그인 없는 빌드가 된다. CI의 값(`ci.yml`의 `SERVER_DEFINES`)을 그대로 쓴다 |
-| 18 | `main`에 올린 직후 다른 병합이 들어와 CI 실행이 취소됐다 | 취소된 실행이 아니라 그 뒤의 실행이 통과했는지 본다 |
+| 18 | 웹을 빌드할 때 서버 키의 이름을 틀리게 줘서(`SUPABASE_ANON_KEY`) 로그인 없는 앱이 만들어졌다. 오류 없이 빌드된다 | 이름은 `SUPABASE_URL`과 `SUPABASE_PUBLISHABLE_KEY`다. 둘 중 하나라도 비면 **조용히** 로그인 없는 빌드가 된다. CI의 값(`ci.yml`의 `SERVER_DEFINES`)을 그대로 쓴다 |
+| 19 | `main`에 올린 직후 다른 병합이 들어와 CI 실행이 취소됐다 | 취소된 실행이 아니라 그 뒤의 실행이 통과했는지 본다 |
 
 ---
 
