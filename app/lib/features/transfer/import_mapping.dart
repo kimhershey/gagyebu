@@ -4,8 +4,10 @@ library;
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../ai/parsed_transaction.dart';
 import '../../core/local_date.dart';
 import '../../domain/enums.dart';
+import '../review/review_state.dart';
 import 'csv_codec.dart';
 import 'export.dart';
 
@@ -83,12 +85,42 @@ class ImportedRow {
       '$installmentMonths ${canceled ? 'canceled' : ''})';
 }
 
-/// 가져올 건을 받아 검토함으로 보내는 함수(출처 `import`).
+/// 가져올 건을 받아 검토함으로 보내는 함수(출처 `import`). null이면 가져오기 화면은
+/// 미리보기까지만 보여 준다(시험에서 덮어쓴다).
 ///
-/// 검토함 쪽이 이어 주기 전에는 null이다. null이면 가져오기 화면은 미리보기까지만 보여 준다.
+/// 자산과 분류는 이름으로 넘긴다. ID로 잇고, 중복으로 보이는 건을 빼 두는 일은 검토함이
+/// 한다.
 final importSinkProvider = Provider<Future<void> Function(List<ImportedRow>)?>(
-  (ref) => null,
+  (ref) =>
+      (rows) => ref
+          .read(reviewSessionProvider.notifier)
+          .open(
+            transactions: [for (final row in rows) row.toParsed()],
+            source: TxSource.import,
+          ),
 );
+
+extension on ImportedRow {
+  /// 검토함이 받는 거래 초안으로 바꾼다.
+  ParsedTransaction toParsed() => ParsedTransaction(
+    date: date,
+    time: time,
+    amount: amount,
+    direction: switch (type) {
+      TxType.income => Direction.incoming,
+      TxType.expense => Direction.outgoing,
+      TxType.transfer => Direction.transfer,
+    },
+    accountText: accountName,
+    counterparty: type == TxType.transfer ? toAccountName : counterparty,
+    category: categoryName,
+    memo: memo,
+    installmentMonths: installmentMonths,
+    isCancel: canceled,
+    ruleId: 'import',
+    raw: '',
+  );
+}
 
 /// 열을 맞출 수 있는 칸.
 enum ImportField {

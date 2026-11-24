@@ -1,14 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/sync_controller.dart';
 import '../../data/db/database.dart';
 
 /// 서버에서 로그인한 계정을 지우는 함수(`delete_my_account()`를 부른다).
 ///
-/// 서버 연결 쪽이 이어 주기 전에는 null이다. null이면 계정 화면이 "계정 삭제"를 숨긴다.
-/// 지우지 못하면 예외를 던져야 한다. 그래야 기기의 가계부를 지우지 않는다.
-final accountDeleterProvider = Provider<Future<void> Function()?>(
-  (ref) => null,
-);
+/// 로그인하지 않았거나 서버가 없는 빌드면 null이다. null이면 계정 화면이 "계정 삭제"를
+/// 숨긴다. 지우지 못하면 예외를 던진다. 그래야 기기의 가계부를 지우지 않는다.
+final accountDeleterProvider = Provider<Future<void> Function()?>((ref) {
+  final signedIn = ref.watch(
+    syncControllerProvider.select((status) => status.signedIn),
+  );
+  if (!signedIn) return null;
+  return ref.read(syncControllerProvider.notifier).deleteAccount;
+});
 
 /// 기기의 가계부 · 대기열 · 충돌 기록 · 작업 기록 · 동기화 상태를 모두 지운다.
 ///

@@ -271,7 +271,12 @@ void main() {
     testWidgets('이메일을 보여 주고 로그아웃한다', (tester) async {
       final services = await createTestServices();
       final sync = FakeSyncController.signedIn(email: email);
-      await open(tester, services, sync: sync);
+      await open(
+        tester,
+        services,
+        sync: sync,
+        overrides: [accountDeleterProvider.overrideWithValue(null)],
+      );
       expect(find.byKey(const ValueKey('account-email')), findsOneWidget);
       expect(find.text(email), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('account-sign-out')));
@@ -282,7 +287,12 @@ void main() {
 
     testWidgets('서버 쪽이 이어 주지 않았으면 계정 삭제가 보이지 않는다', (tester) async {
       final services = await createTestServices();
-      await open(tester, services, sync: FakeSyncController.signedIn());
+      await open(
+        tester,
+        services,
+        sync: FakeSyncController.signedIn(),
+        overrides: [accountDeleterProvider.overrideWithValue(null)],
+      );
       expect(find.text(email), findsOneWidget);
       expect(find.byKey(const ValueKey('delete-account')), findsNothing);
       expect(find.byKey(const ValueKey('delete-email')), findsNothing);

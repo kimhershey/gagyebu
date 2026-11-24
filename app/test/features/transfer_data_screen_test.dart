@@ -225,7 +225,14 @@ void main() {
     testWidgets('이 앱이 내보낸 파일은 열을 맞추지 않고 바로 읽는다', (tester) async {
       final bytes = await ownFile();
       final services = await createTestServices();
-      await open(tester, services, overrides: [picker('가계부_11월.csv', bytes)]);
+      await open(
+        tester,
+        services,
+        overrides: [
+          picker('가계부_11월.csv', bytes),
+          importSinkProvider.overrideWithValue(null),
+        ],
+      );
 
       await tapKey(tester, 'import-pick');
       expect(find.text('가계부_11월.csv · UTF-8 · 3줄'), findsOneWidget);

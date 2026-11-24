@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/repositories/conflict_repository.dart';
 import '../data/server/realtime.dart';
 import '../features/recurring/recurring_runner.dart';
 
@@ -9,4 +10,10 @@ import '../features/recurring/recurring_runner.dart';
 final backgroundJobsProvider = Provider<void>((ref) {
   ref.watch(recurringRunnerProvider);
   ref.watch(realtimeSyncProvider);
+  // 오래된 충돌 기록은 켤 때 한 번 치운다. 못 치워도 다음에 켤 때 다시 한다.
+  Future.microtask(() async {
+    try {
+      await ref.read(conflictRepositoryProvider).pruneConflicts();
+    } catch (_) {}
+  });
 });

@@ -5,6 +5,7 @@ import 'package:gagyebu/app/providers.dart';
 import 'package:gagyebu/app/router.dart';
 import 'package:gagyebu/app/theme/palettes.dart';
 import 'package:gagyebu/core/local_date.dart';
+import 'package:gagyebu/data/prefs/device_prefs.dart';
 import 'package:gagyebu/domain/enums.dart';
 import 'package:gagyebu/domain/month_summary.dart';
 import 'package:gagyebu/features/budget/budget_screen.dart';
@@ -412,6 +413,9 @@ void main() {
           overrides: [
             appServicesProvider.overrideWithValue(services),
             clockProvider.overrideWithValue(() => testNow),
+            devicePrefsProvider.overrideWithValue(
+              MemoryDevicePrefs({'onboarding.done': 'true'}),
+            ),
             monthSummaryProvider.overrideWith(
               (ref) => fail
                   ? Stream<MonthSummary>.error(StateError('SqliteException(1)'))

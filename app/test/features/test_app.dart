@@ -6,6 +6,7 @@ import 'package:gagyebu/app/app.dart';
 import 'package:gagyebu/app/providers.dart';
 import 'package:gagyebu/app/router.dart';
 import 'package:gagyebu/data/db/database.dart';
+import 'package:gagyebu/data/prefs/device_prefs.dart';
 import 'package:gagyebu/data/repositories/ledger_repository.dart';
 
 /// 시험에서 쓰는 '지금'. 2026-11-17은 화요일이다.
@@ -27,6 +28,8 @@ Future<AppServices> createTestServices() async {
 }
 
 /// 주어진 창 크기로 앱을 띄운다.
+///
+/// 첫 실행 안내는 이미 닫은 것으로 둔다(안내 카드는 `onboarding_card_test.dart`가 본다).
 Future<void> pumpApp(
   WidgetTester tester,
   AppServices services, {
@@ -45,6 +48,9 @@ Future<void> pumpApp(
       overrides: [
         appServicesProvider.overrideWithValue(services),
         clockProvider.overrideWithValue(() => testNow),
+        devicePrefsProvider.overrideWithValue(
+          MemoryDevicePrefs({'onboarding.done': 'true'}),
+        ),
       ],
       child: GagyebuApp(router: createRouter(initialLocation: location)),
     ),
