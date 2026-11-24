@@ -11,6 +11,7 @@ import '../../data/db/database.dart';
 import '../../data/repositories/ledger_repository.dart';
 import '../../data/repositories/transaction_query.dart';
 import '../../domain/enums.dart';
+import '../command/command_requests.dart';
 import '../common/widgets.dart';
 import 'transaction_calendar.dart';
 import 'transaction_editor.dart';
@@ -249,10 +250,26 @@ class _ListPaneState extends ConsumerState<_ListPane> {
   late final TextEditingController _search = TextEditingController(
     text: ref.read(searchQueryProvider),
   );
+  final _searchFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // 명령창의 "내역 검색"이나 '/' 키로 들어왔으면 검색 칸에 초점을 준다.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeSearchFocus());
+  }
+
+  void _takeSearchFocus() {
+    if (!mounted) return;
+    if (ref.read(transactionSearchFocusRequestProvider.notifier).take()) {
+      _searchFocus.requestFocus();
+    }
+  }
 
   @override
   void dispose() {
     _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -272,6 +289,10 @@ class _ListPaneState extends ConsumerState<_ListPane> {
     ref.listen(searchQueryProvider, (_, next) {
       if (_search.text != next) _search.text = next;
     });
+    ref.listen(transactionSearchFocusRequestProvider, (_, requested) {
+      // 요청을 가져가며 값을 바꾸므로 이번 알림이 끝난 뒤에 한다.
+      if (requested) Future.microtask(_takeSearchFocus);
+    });
     final transactions = ref.watch(filteredTransactionsProvider);
     final query = ref.watch(searchQueryProvider);
     final filter = ref.watch(transactionFilterProvider);
@@ -280,6 +301,7 @@ class _ListPaneState extends ConsumerState<_ListPane> {
     final searchField = TextField(
       key: const ValueKey('transaction-search'),
       controller: _search,
+      focusNode: _searchFocus,
       decoration: InputDecoration(
         hintText: '상대방 · 메모 · 분류 검색',
         prefixIcon: const Icon(Icons.search),

@@ -517,19 +517,16 @@ $_cardSms
       await disposeApp(tester, services);
     });
 
-    testWidgets('다른 화면의 "입력하기"(openInput)는 입력창으로 보낸다', (tester) async {
+    testWidgets('다른 화면에서 입력창에 초점을 주고 글을 채울 수 있다', (tester) async {
       final services = await createTestServices();
       await pumpApp(tester, services, size: desktop);
 
-      await openInput(tester.element(find.byType(AppShell)));
+      focusComposer(tester.element(find.byType(AppShell)));
       await tester.pumpAndSettle();
       // 입력창에 초점이 가서 예시 칩이 보인다.
       expect(find.byKey(const ValueKey('composer-chips')), findsOneWidget);
 
-      await openInput(
-        tester.element(find.byType(AppShell)),
-        initialText: '택시 12000원',
-      );
+      focusComposer(tester.element(find.byType(AppShell)), text: '택시 12000원');
       await tester.pumpAndSettle();
       expect(_composerText(tester), '택시 12000원');
       await disposeApp(tester, services);

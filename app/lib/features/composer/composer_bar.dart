@@ -52,8 +52,51 @@ class _ComposerBarState extends ConsumerState<ComposerBar>
     WidgetsBinding.instance.addObserver(this);
     // 이 입력창이 뜨기 전에 올라와 있던 글(앱을 켜면서 받은 공유)을 채운다.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _takeIncoming();
+      if (!mounted) return;
+      _takeIncoming();
+      // 명령창 자리의 입력창은 명령 목록의 키(↑ ↓ Enter Esc)를 글 칸보다 먼저 받는다.
+      if (widget.placement == ComposerPlacement.command) {
+        ref.read(composerKeyInterceptorProvider.notifier).set(_commandKeys);
+      }
     });
+  }
+
+  /// 명령 목록에서 고르고 실행하는 키. 고른 명령이 없으면 글 칸에 맡긴다.
+  KeyEventResult _commandKeys(KeyEvent event) {
+    if (!mounted || widget.placement != ComposerPlacement.command) {
+      return KeyEventResult.ignored;
+    }
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    final query = _controller.text.text;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowUp) {
+      final delta = key == LogicalKeyboardKey.arrowDown ? 1 : -1;
+      return moveCommandSelection(ref, query, delta)
+          ? KeyEventResult.handled
+          : KeyEventResult.ignored;
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      ref.read(commandSelectionProvider.notifier).clear();
+      return KeyEventResult.ignored;
+    }
+    final enter =
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter;
+    if (!enter || event is! KeyDownEvent) return KeyEventResult.ignored;
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isShiftPressed ||
+        keyboard.isControlPressed ||
+        keyboard.isMetaPressed ||
+        keyboard.isAltPressed ||
+        _controller.text.value.composing.isValid) {
+      return KeyEventResult.ignored;
+    }
+    if (runSelectedCommand(context, ref, query)) {
+      _controller.clear();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -95,6 +138,11 @@ class _ComposerBarState extends ConsumerState<ComposerBar>
     ref.listen(incomingTextProvider, (_, next) {
       if (next != null) _takeIncoming();
     });
+    // 단축키(Ctrl/⌘+K)와 명령이 입력창에 초점을 청한다.
+    ref.listen(
+      composerFocusRequestProvider,
+      (_, _) => _controller.requestFocus(),
+    );
     ref.listen(
       composerControllerProvider.select((s) => s.event),
       (previous, next) => _onEvent(next),

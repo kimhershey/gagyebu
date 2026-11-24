@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -259,26 +258,11 @@ void _say(ScaffoldMessengerState? messenger, String text) {
     ..showSnackBar(SnackBar(content: Text(text)));
 }
 
-/// 클립보드의 글을 입력창에 채우고 초점을 준다. 보내는 것은 사용자가 한다(7.5).
+/// 클립보드의 글을 입력창에 넣고 바로 해석한다. 초안은 검토함에 올라온다.
 Future<void> _paste(BuildContext context, WidgetRef ref) async {
-  // 기다리는 사이에 화면이 사라질 수 있어 쓸 것을 먼저 잡아 둔다.
-  final messenger = ScaffoldMessenger.maybeOf(context);
-  final incoming = ref.read(incomingTextProvider.notifier);
-  final focus = ref.read(composerFocusRequestProvider.notifier);
-  String? text;
-  try {
-    text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
-  } catch (_) {
-    // 브라우저가 클립보드 읽기를 막으면 여기로 온다.
-    _say(messenger, '클립보드를 읽지 못했습니다. 입력창에 직접 붙여넣어 주세요.');
-    return;
-  }
-  if (text == null || text.trim().isEmpty) {
-    _say(messenger, '클립보드에 글자가 없습니다.');
-    return;
-  }
-  incoming.offer(text);
-  focus.request();
+  final composer = ref.read(composerControllerProvider.notifier);
+  await composer.pasteFromClipboard();
+  if (composer.text.text.trim().isNotEmpty) await composer.submit();
 }
 
 Future<void> _undoLast(BuildContext context, WidgetRef ref) async {

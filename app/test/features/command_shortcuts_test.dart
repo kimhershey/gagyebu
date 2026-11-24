@@ -307,6 +307,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.slash);
       await tester.pumpAndSettle();
       expect(locationOf(tester), '/transactions');
+      // 이 틀에는 내역 화면이 없다. 요청이 올라간 것까지만 본다.
       expect(container.read(transactionSearchFocusRequestProvider), isTrue);
     });
 
@@ -487,7 +488,15 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.slash);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('period-label')), findsWidgets);
-      expect(container.read(transactionSearchFocusRequestProvider), isTrue);
+      // 내역 화면이 요청을 가져가 검색 칸에 초점을 준다.
+      expect(container.read(transactionSearchFocusRequestProvider), isFalse);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey('transaction-search')))
+            .focusNode!
+            .hasFocus,
+        isTrue,
+      );
       expect(tester.takeException(), isNull);
       await disposeApp(tester, services);
     });

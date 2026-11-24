@@ -1,5 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
+import '../../data/repositories/input_batch_repository.dart';
+import '../history/history_actions.dart';
+
 /// 입력창에 초점을 달라는 신호. 숫자가 오를 때마다 입력창이 초점을 잡는다.
 ///
 /// 입력창은 다른 폴더의 것이라 직접 부르지 않고, 입력창이 이 값을 듣게 한다
@@ -42,6 +46,17 @@ final transactionSearchFocusRequestProvider =
 /// ("3건을 되돌리고, 고친 1건은 남겼습니다"). 알릴 말이 없으면 null.
 typedef UndoLastBatch = Future<String?> Function();
 
-/// 마지막 입력 묶음 되돌리기(`docs/SPEC.md` 7.7). 되돌리기 저장소가 생기면 그 구현으로
-/// 덮어쓴다. null인 동안에는 명령과 단축키(Ctrl/⌘+Z)를 숨긴다.
-final undoLastBatchProvider = Provider<UndoLastBatch?>((ref) => null);
+/// 마지막 입력 묶음 되돌리기(`docs/SPEC.md` 7.7). null이면 명령과 단축키(Ctrl/⌘+Z)를
+/// 숨긴다(시험에서 덮어쓴다).
+final undoLastBatchProvider = Provider<UndoLastBatch?>(
+  (ref) => () async {
+    final batches = ref.read(inputBatchRepositoryProvider);
+    final last = await batches.lastUndoable(ref.read(ledgerIdProvider));
+    if (last == null) return '되돌릴 입력이 없습니다';
+    try {
+      return undoResultMessage(await batches.undo(last.id));
+    } on BatchAlreadyUndone {
+      return '이미 되돌린 묶음입니다';
+    }
+  },
+);

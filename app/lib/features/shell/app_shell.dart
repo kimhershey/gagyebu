@@ -8,7 +8,6 @@ import '../../app/theme/tokens.dart';
 import '../../core/breakpoints.dart';
 import '../command/commands.dart';
 import '../composer/composer_bar.dart';
-import '../composer/composer_state.dart';
 import '../review/review_panel.dart';
 import '../review/review_state.dart';
 
@@ -296,11 +295,4 @@ class _SideMenu extends ConsumerWidget {
       ],
     );
   }
-}
-
-/// 입력창으로 보낸다. [initialText]가 있으면 그 글을 채워 둔다.
-///
-/// 입력은 어느 화면에나 있는 입력창에서 한다. 따로 여는 입력 화면은 없다.
-Future<void> openInput(BuildContext context, {String? initialText}) async {
-  focusComposer(context, text: initialText);
 }

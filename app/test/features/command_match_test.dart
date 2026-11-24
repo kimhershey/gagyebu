@@ -23,7 +23,8 @@ List<AppCommand> _commands({bool signedIn = true, bool undo = true}) {
   final container = ProviderContainer(
     overrides: [
       syncControllerProvider.overrideWith(() => _FakeSync(signedIn)),
-      if (undo) undoLastBatchProvider.overrideWithValue(() async => null),
+      // 이 시험에는 가계부가 없다. 되돌리기는 가짜로 두거나(있음) 비워 둔다(없음).
+      undoLastBatchProvider.overrideWithValue(undo ? () async => null : null),
     ],
   );
   addTearDown(container.dispose);
@@ -69,7 +70,7 @@ void main() {
       );
     });
 
-    test('되돌리기가 이어지지 않았으면 그 명령을 숨긴다', () {
+    test('되돌리기를 쓸 수 없으면 그 명령을 숨긴다', () {
       final ids = [for (final c in _commands(undo: false)) c.id];
       expect(ids, isNot(contains(CommandIds.undoLast)));
     });

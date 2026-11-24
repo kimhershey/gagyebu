@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../composer/composer_state.dart';
+import '../review/review_panel.dart';
+import '../review/review_state.dart';
 import 'commands.dart';
 
 /// 보조키로 ⌘을 쓰는 플랫폼인지. 웹도 Mac의 브라우저면 그렇다.
@@ -17,6 +20,9 @@ String modifierShortcut(String key) => usesCommandKey ? '⌘$key' : 'Ctrl+$key';
 enum AppShortcut {
   /// Ctrl/⌘+K: 입력창(명령창)으로.
   focusComposer,
+
+  /// Ctrl/⌘+Enter: 검토함의 "모두 승인하고 저장"(입력창에 초점이 있을 때).
+  saveReview,
 
   /// `/`: 내역 검색.
   search,
@@ -101,6 +107,10 @@ AppShortcut? resolveAppShortcut(
     if (otherModifier || alt || shift || repeat) return null;
     if (_isLetter(event, LogicalKeyboardKey.keyK, PhysicalKeyboardKey.keyK)) {
       return AppShortcut.focusComposer;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      return AppShortcut.saveReview;
     }
     if (!inTextField &&
         _isLetter(event, LogicalKeyboardKey.keyZ, PhysicalKeyboardKey.keyZ)) {
@@ -193,13 +203,23 @@ class _AppShortcutsState extends ConsumerState<AppShortcuts> {
       ref.read(composerFocusRequestProvider.notifier).request();
       return true;
     }
+    if (shortcut == AppShortcut.saveReview) {
+      // 검토함에 초점이 있을 때는 검토함이 직접 듣는다. 여기서는 입력창에 초점이 있을
+      // 때만 받아, 글을 적다가도 바로 저장할 수 있게 한다.
+      final composer = ref.read(composerControllerProvider.notifier);
+      if (!composer.focusNode.hasFocus || !ref.read(reviewActiveProvider)) {
+        return false;
+      }
+      saveReviewAndNotify(context);
+      return true;
+    }
     final id = switch (shortcut) {
       AppShortcut.search => CommandIds.search,
       AppShortcut.help => CommandIds.shortcutsHelp,
       AppShortcut.previousMonth => CommandIds.previousMonth,
       AppShortcut.nextMonth => CommandIds.nextMonth,
       AppShortcut.undo => CommandIds.undoLast,
-      AppShortcut.focusComposer => null,
+      AppShortcut.focusComposer || AppShortcut.saveReview => null,
     };
     final command = ref
         .read(commandsProvider)

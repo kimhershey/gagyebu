@@ -8,8 +8,8 @@ import 'package:gagyebu/app/sync_controller.dart';
 import 'package:gagyebu/app/theme/theme_setting.dart';
 import 'package:gagyebu/data/server/server_connection.dart';
 import 'package:gagyebu/domain/month_period.dart';
+import 'package:gagyebu/features/budget/budget_screen.dart';
 import 'package:gagyebu/features/command/commands.dart';
-import 'package:gagyebu/features/composer/composer_state.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -164,7 +164,8 @@ Future<ProviderContainer> pumpCommands(
         clockProvider.overrideWithValue(() => testNow),
         monthStartDayProvider.overrideWithValue(1),
         syncControllerProvider.overrideWith(() => sync ?? FakeSync()),
-        if (undo != null) undoLastBatchProvider.overrideWithValue(undo),
+        // 이 틀에는 가계부가 없다. 되돌리기는 시험이 준 것만 쓴다.
+        undoLastBatchProvider.overrideWithValue(undo),
       ],
       child: Consumer(
         builder: (context, ref, _) {
@@ -589,32 +590,62 @@ void main() {
       expect(find.textContaining('db is locked'), findsNothing);
     });
 
-    testWidgets('되돌리기가 이어지지 않았으면 명령이 없다', (tester) async {
+    testWidgets('되돌리기를 쓸 수 없으면 명령이 없다', (tester) async {
       await pumpCommands(tester);
       await tester.enterText(find.byKey(const ValueKey('field')), '>되돌리기');
       await tester.pump();
       expect(find.byKey(const ValueKey('command-list')), findsNothing);
     });
 
-    testWidgets('붙여넣고 해석: 클립보드의 글을 입력창에 건네고 초점을 청한다', (tester) async {
-      final container = await pumpCommands(tester);
-      mockClipboard(tester, '신한카드 승인 12,000원 김밥천국');
-      await runByTap(tester, '>붙여넣', CommandIds.paste);
-      expect(container.read(incomingTextProvider), '신한카드 승인 12,000원 김밥천국');
-      expect(container.read(composerFocusRequestProvider), 1);
+    testWidgets('붙여넣고 해석: 명령창에서 고르면 클립보드의 글이 검토함에 올라온다', (tester) async {
+      final services = await createTestServices();
+      await pumpApp(tester, services, size: desktop);
+      mockClipboard(tester, '어제 점심 김밥천국 8천원');
+
+      // '>'로 시작하면 명령만 찾고 첫 줄이 골라져 있다. Enter로 실행한다.
+      await tester.enterText(
+        find.byKey(const ValueKey('composer-input')),
+        '>붙여넣',
+      );
+      await tester.pump();
+      expect(find.byKey(const ValueKey('command-list')), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('review-0')), findsOneWidget);
+      expect(find.byKey(const ValueKey('command-list')), findsNothing);
+      await disposeApp(tester, services);
     });
 
-    testWidgets('붙여넣고 해석: 클립보드가 비었거나 읽지 못하면 알린다', (tester) async {
-      final container = await pumpCommands(tester);
-      mockClipboard(tester, '  ');
-      await runByTap(tester, '>paste', CommandIds.paste);
-      expect(find.text('클립보드에 글자가 없습니다.'), findsOneWidget);
+    testWidgets('명령창에서 화살표로 고른 명령을 Enter로 실행한다', (tester) async {
+      final services = await createTestServices();
+      await pumpApp(tester, services, size: desktop);
 
-      mockClipboard(tester, null, denied: true);
-      await runByTap(tester, '>paste', CommandIds.paste);
-      expect(find.text('클립보드를 읽지 못했습니다. 입력창에 직접 붙여넣어 주세요.'), findsOneWidget);
-      expect(container.read(incomingTextProvider), isNull);
-      expect(container.read(composerFocusRequestProvider), 0);
+      await tester.enterText(
+        find.byKey(const ValueKey('composer-input')),
+        '>예산',
+      );
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.byType(BudgetScreen), findsOneWidget);
+      // 명령을 실행하면 글을 비운다. 거래로 해석하지 않는다.
+      expect(find.byKey(const ValueKey('review-0')), findsNothing);
+      await disposeApp(tester, services);
+    });
+
+    testWidgets('Ctrl+K는 입력창에 초점을 준다', (tester) async {
+      final services = await createTestServices();
+      await pumpApp(tester, services, size: desktop);
+      expect(find.byKey(const ValueKey('composer-chips')), findsNothing);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+      // 입력창에 초점이 가면 예시 칩이 보인다.
+      expect(find.byKey(const ValueKey('composer-chips')), findsOneWidget);
+      await disposeApp(tester, services);
     });
   });
 }
