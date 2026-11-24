@@ -580,6 +580,16 @@ class _ReviewCardState extends State<ReviewCard> {
                         color: scheme.onSurfaceVariant,
                       ),
                     ),
+                  ] else if (parsed.memo != null) ...[
+                    // 문장에서 덜어 낸 말('점심', '2잔')은 메모로 저장된다.
+                    const SizedBox(height: 8),
+                    Text(
+                      '메모: ${parsed.memo}',
+                      key: const Key('draft-memo'),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ],
               ),

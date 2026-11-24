@@ -15,7 +15,8 @@ void main() {
       expect(tx.amount, 8000);
       expect(tx.direction, Direction.outgoing);
       expect(tx.accountText, '카드');
-      expect(tx.counterparty, '점심 김밥천국');
+      expect(tx.counterparty, '김밥천국');
+      expect(tx.memo, '점심');
     });
 
     test('날짜가 없으면 오늘', () {
@@ -64,7 +65,8 @@ void main() {
     test('수량이 섞여도 금액을 고른다', () {
       final tx = parse('커피 2잔 9000원')!;
       expect(tx.amount, 9000);
-      expect(tx.counterparty, '커피 2잔');
+      expect(tx.counterparty, '커피');
+      expect(tx.memo, '2잔');
     });
 
     test('금액이 없으면 null', () {
@@ -108,6 +110,64 @@ void main() {
     test('모르면 null', () {
       expect(out('홍길동'), isNull);
       expect(income('홍길동'), isNull);
+    });
+  });
+
+  group('상대방에는 무엇에 쓴 돈인지만 남긴다', () {
+    (String?, String?) names(String text) {
+      final tx = parse(text)!;
+      return (tx.counterparty, tx.memo);
+    }
+
+    test('동작과 조사를 버리고 끼니는 메모로 보낸다', () {
+      expect(names('어제 점심 김천감 밥먹음 만원에'), ('김천감', '점심'));
+      expect(names('저녁 치킨 시켜먹음 2만원'), ('치킨', '저녁'));
+      expect(names('만원 주고 김밥 사먹음'), ('김밥', null));
+      expect(names('택시 탔음 8천원'), ('택시', null));
+      expect(names('다이소 가서 5천원 씀'), ('다이소', null));
+      expect(names('토요일에 미용실 4만원'), ('미용실', null));
+    });
+
+    test('결제 · 이체 같은 말은 다른 이름이 있으면 버린다', () {
+      expect(names('넷플릭스 구독료 17,000원 결제'), ('넷플릭스 구독료', null));
+      expect(names('지난달 25일 월세 55만원 이체'), ('월세', null));
+      expect(names('넷플릭스 구독료 17,000원 자동결제됨'), ('넷플릭스 구독료', null));
+      expect(names('11월 10일 월급 320만원 들어옴'), ('월급', null));
+      expect(names('송금 5만원'), ('송금', null));
+    });
+
+    test('끼니만 있으면 그것이 상대방이다', () {
+      expect(names('점심 12000'), ('점심', null));
+      expect(names('어제 저녁 배달 2만원'), ('저녁 배달', null));
+    });
+
+    test('수량과 함께한 사람은 메모로 보낸다', () {
+      expect(names('책 두 권 2만 7천원'), ('책', '두 권'));
+      expect(names('곶감 한 박스 3만원 샀다'), ('곶감', '한 박스'));
+      expect(names('오늘 헬스장 3개월 27만원'), ('헬스장', '3개월'));
+      expect(names('어제 저녁에 친구랑 삼겹살 먹었다 4만원'), ('삼겹살', '저녁 친구랑'));
+    });
+
+    test('가게와 사람이 드러나면 그것을 상대방으로 둔다', () {
+      expect(names('오늘 스타벅스에서 커피마심 4500원'), ('스타벅스', '커피'));
+      expect(names('엄마한테 용돈 10만원 받음'), ('엄마', '용돈'));
+      expect(names('친구가 밥값 1만 5천원 보내줌'), ('친구', '밥값'));
+      expect(names('그저께 엄마가 20만원 보내주심'), ('엄마', null));
+    });
+
+    test('동작처럼 끝나는 이름은 건드리지 않는다', () {
+      expect(names('수납함 2개 4천원'), ('수납함', '2개'));
+      expect(names('홍삼 5만원 삼'), ('홍삼', null));
+      expect(names('감 한 박스 2만원'), ('감', '한 박스'));
+      expect(names('떡볶이 4천원'), ('떡볶이', null));
+      expect(names('요가 수업 12만원'), ('요가 수업', null));
+      expect(names('교통카드 충전 5만원'), ('교통카드 충전', null));
+    });
+
+    test('남는 말이 없으면 상대방이 없다고 알린다', () {
+      final tx = parse('어제 5천원 씀')!;
+      expect(tx.counterparty, isNull);
+      expect(tx.warnings, contains(ParseWarning.noCounterparty));
     });
   });
 }

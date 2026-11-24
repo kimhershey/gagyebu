@@ -96,7 +96,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('input-analyze')));
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(TextField, '점심 김밥천국'), findsOneWidget);
+    // 가맹점 칸에는 가게 이름만, 끼니는 메모로 간다.
+    expect(find.widgetWithText(TextField, '김밥천국'), findsOneWidget);
+    expect(find.text('메모: 점심'), findsOneWidget);
     expect(find.widgetWithText(TextField, '8,000'), findsOneWidget);
     expect(find.text('11월 16일 (월)'), findsOneWidget);
     await disposeApp(tester, services);

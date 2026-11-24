@@ -86,8 +86,10 @@ Future<ReviewDraft> buildReviewDraft({
       categoryId = byRule;
     } else {
       // 모델이 고른 분류가 있으면 그것을, 없으면 기본 낱말 사전을 쓴다.
+      // 상대방만으로 짐작하고, 안 되면 메모까지 본다('버스비' + '아침'은 교통이다).
       final name =
           parsed.category ??
+          suggestCategoryName(party, parsed.direction) ??
           suggestCategoryName('$party ${parsed.memo ?? ''}', parsed.direction);
       for (final c in categories) {
         if (c.kind == kind && c.name == name) categoryId = c.id;
