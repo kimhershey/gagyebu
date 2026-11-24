@@ -11,7 +11,6 @@ import '../features/categories/categories_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/image_input/image_input_screen.dart';
-import '../features/input/input_panel.dart';
 import '../features/lock/lock_screen.dart';
 import '../features/models/models_screen.dart';
 import '../features/query/query_screen.dart';
@@ -167,17 +166,6 @@ GoRouter createRouter({
     GoRoute(
       path: '/new-password',
       builder: (context, state) => const NewPasswordScreen(),
-    ),
-    GoRoute(
-      path: '/input',
-      builder: (context, state) => Scaffold(
-        body: SafeArea(
-          child: InputPanel(
-            onClose: () => context.pop(),
-            initialText: state.extra as String?,
-          ),
-        ),
-      ),
     ),
   ],
 );
