@@ -10,7 +10,9 @@ environment:
 # 추가하기 전에 tool/check_licenses.dart로 확인한다.
 dependencies:
   collection: ^1.19.1
+  desktop_drop: '>=0.8.0 <0.8.1'
   drift: ^2.35.4
+  file_selector: ^1.1.0
   flutter:
     sdk: flutter
   flutter_localizations:
