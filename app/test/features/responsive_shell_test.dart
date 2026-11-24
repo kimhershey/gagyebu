@@ -165,7 +165,7 @@ void main() {
       '/transactions',
       '/stats',
       '/settings',
-      '/input',
+      '/review',
     ]) {
       testWidgets('소형 폰 $location', (tester) async {
         final services = await createTestServices();
