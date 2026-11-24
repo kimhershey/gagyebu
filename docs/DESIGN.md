@@ -2,6 +2,8 @@
 
 2026-11-24 기준으로 이 저장소에 **구현된 것**의 설계다. 목표와 근거, 단계별 계획까지 담은 상세 설계안은 따로 있다: [소프트웨어 상세 설계안(초안 v0.4)](https://claude.ai/artifact/R7AHGE5GLftfDZYvz3TCKD).
 
+테마와 새 화면 뼈대의 설계(아직 구현 전)는 [UI_DESIGN.md](UI_DESIGN.md)에 있다.
+
 ## 무엇을 만드는가
 
 문자와 문장으로 적는 가계부다. 결제 문자를 붙여넣거나 한 줄로 적으면 기기 안에서 해석해 거래 초안을 만들고, 사용자가 확인하면 저장한다. 로그인하면 여러 기기가 같은 가계부를 본다.
@@ -100,6 +102,7 @@ gagyebu/
 ├─ README.md               현황, 개발 방법
 ├─ docs/
 │  ├─ DESIGN.md            이 문서
+│  ├─ UI_DESIGN.md         테마 · UI 설계(구현 전), ui-palettes.json은 색 값
 │  └─ screenshots/         README에 쓰는 화면
 ├─ .github/workflows/
 │  └─ ci.yml               시험 · 빌드 · 웹 배포
