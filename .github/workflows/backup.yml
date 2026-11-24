@@ -1,0 +1,140 @@
+name: 서버 백업
+
+# 매일 서버 DB(public 스키마)를 덤프해 암호화하고 Actions 산출물로 30일 보관한다.
+# 주 1회는 백업을 마친 뒤 오래된 삭제 표시를 정리한다(purge_tombstones). docs/SPEC.md 7.22.
+#
+# 저장소 비밀값 SUPABASE_DB_URL과 BACKUP_PASSPHRASE가 둘 다 있어야 돈다. 하나라도 없으면
+# "비밀값이 없어 건너뜁니다"라고 남기고 성공으로 끝난다(포크나 서버를 붙이지 않은 저장소).
+# 비밀값을 만드는 방법과 복원 절차는 supabase/README.md의 "백업과 복원"에 있다.
+#
+# 예약 실행은 기본 브랜치의 이 파일로만 돈다. 시각은 UTC다(18:17 UTC = 한국 시각 03:17).
+# 일요일(UTC)의 실행만 정리까지 한다. 아래 purge 작업의 조건이 이 cron 문자열과 글자까지 같아야 한다.
+on:
+  schedule:
+    - cron: '17 18 * * 1-6'
+    - cron: '17 18 * * 0'
+  workflow_dispatch:
+    inputs:
+      purge:
+        description: 백업한 뒤 오래된 삭제 표시도 정리한다
+        type: boolean
+        default: false
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+# 저장소를 읽거나 쓰지 않는다. 산출물 올리기는 이 권한과 상관없이 된다.
+permissions: {}
+
+jobs:
+  backup:
+    name: DB 덤프
+    # PGDG 저장소에서 서버와 같은 판의 pg_dump를 받는다. 러너의 판을 고정해 둔다(ci.yml의 server-sql과 같다).
+    runs-on: ubuntu-24.04
+    steps:
+      # secrets는 if:에서 읽을 수 없어 env로 받아 셸에서 비었는지 본다.
+      - name: 비밀값이 있는지 보기
+        id: gate
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::notice title=백업을 건너뛰었다::비밀값이 없어 건너뜁니다. SUPABASE_DB_URL과 BACKUP_PASSPHRASE를 둘 다 넣으면 백업이 돈다."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # pg_dump는 서버보다 낮은 판이면 덤프하지 못하고, 높은 판으로 뜬 덤프는 서버 판에 맞는다는 보장이 없다.
+      # 그래서 서버의 판을 물어보고 같은 판의 클라이언트를 깐다.
+      - name: 서버와 같은 판의 PostgreSQL 클라이언트 준비
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common ca-certificates
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client
+          major=$(psql "$SUPABASE_DB_URL" -X -At -v ON_ERROR_STOP=1 -c "select current_setting('server_version_num')::int / 10000")
+          case "$major" in
+            ''|*[!0-9]*) echo "::error title=서버의 판을 읽지 못했다::받은 값: $major"; exit 1 ;;
+          esac
+          sudo apt-get install -y "postgresql-client-$major"
+          echo "PGBIN=/usr/lib/postgresql/$major/bin" >> "$GITHUB_ENV"
+          echo "서버는 PostgreSQL $major 입니다."
+
+      - name: 덤프하고 암호화
+        id: dump
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          umask 077
+          stamp=$(date -u +%Y%m%dT%H%M%SZ)
+          mkdir -p backup
+          dump="backup/gagyebu-public-$stamp.dump"
+
+          # 형식은 custom이다. 복원할 때 pg_restore로 데이터만, 표를 골라 꺼낼 수 있다(압축도 된다).
+          "$PGBIN/pg_dump" "$SUPABASE_DB_URL" --schema=public --format=custom --no-owner --file="$dump"
+
+          # 빈 덤프를 백업이라고 올리지 않는다. public에는 표가 10개 있다.
+          tables=$("$PGBIN/pg_restore" --list "$dump" | grep -c ' TABLE DATA public ' || true)
+          if [ "$tables" -lt 1 ]; then
+            echo "::error title=덤프에 표가 없다::public 스키마의 표 데이터가 하나도 들어 있지 않다."
+            exit 1
+          fi
+
+          # 암호는 명령줄 인자로 넘기지 않는다(프로세스 목록에 보인다). 표준 입력으로 준다.
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65011712 \
+            --output "$dump.gpg" "$dump"
+
+          # 같은 암호로 풀리는지 한 번 확인한다. 풀리지 않는 백업은 없는 것과 같다.
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 0 \
+            --decrypt "$dump.gpg" | cmp - "$dump"
+
+          # 암호화하지 않은 덤프는 남기지 않는다.
+          rm -f "$dump"
+          echo "표 $tables개, $(stat -c %s "$dump.gpg")바이트"
+          echo "name=gagyebu-db-backup-$stamp" >> "$GITHUB_OUTPUT"
+
+      - name: 산출물로 올리기(30일 보관)
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.dump.outputs.name }}
+          path: backup/*.dump.gpg
+          if-no-files-found: error
+          retention-days: 30
+          # 이미 암호화 · 압축된 파일이다.
+          compression-level: 0
+
+  # 백업이 실패하면 돌지 않는다. 지우기 전의 상태가 백업에 남아 있어야 하기 때문이다.
+  purge:
+    name: 삭제 표시 정리
+    needs: backup
+    if: >-
+      github.event.schedule == '17 18 * * 0'
+      || (github.event_name == 'workflow_dispatch' && inputs.purge)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 90일 지난 삭제 표시 지우기
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          # 백업과 같은 조건이다. 백업이 돌지 않는 저장소에서는 지우지도 않는다.
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::notice title=정리를 건너뛰었다::비밀값이 없어 건너뜁니다."
+            exit 0
+          fi
+          if ! command -v psql > /dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+          # 지운 행 수를 표별로 돌려준다. 행의 내용은 찍지 않는다.
+          psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 -c "select public.purge_tombstones();"
