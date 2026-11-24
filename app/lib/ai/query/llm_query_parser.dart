@@ -29,7 +29,7 @@ const _rules = '''
 
 출력 형식: {"period":기간,"category":분류,"party":상대,"type":종류,"agg":집계}
 - period: [기간]의 기호 가운데 하나다. 물음에 기간이 없으면 "this_month"다.
-- category: [분류]의 이름 가운데 하나다. 맞는 것이 없으면 null이다.
+- category: 물음에 그 분류를 가리키는 말이 있을 때만 [분류]의 이름 가운데 하나를 고른다. '쓴 돈 전부', '지출 내역', '수입 합계'처럼 분류를 말하지 않았거나 가게 · 사람 이름만 있으면 null이다. 억지로 고르지 않는다.
 - party: 물음에 나온 가게나 사람의 이름을 그대로 적는다. 없으면 null이다.
 - type: 쓴 돈이면 "expense", 번 돈 · 받은 돈이면 "income", 내 계좌 사이에 옮긴 돈이면 "transfer"다. 가리지 않으면 null이다.
 - agg: 금액을 물으면 "sum", 횟수를 물으면 "count", 평균을 물으면 "avg", 내역을 보여 달라면 "list"다.
@@ -40,7 +40,19 @@ const _rules = '''
 물음: 저번 달에 밥값으로 나간 게 어느 정도야
 {"period":"last_month","category":"식비","party":null,"type":"expense","agg":"sum"}
 물음: 요새 한 주 동안 스타벅스 간 횟수
-{"period":"last_7_days","category":null,"party":"스타벅스","type":"expense","agg":"count"}''';
+{"period":"last_7_days","category":null,"party":"스타벅스","type":"expense","agg":"count"}
+물음: 이달에 나간 돈 다 더하면
+{"period":"this_month","category":null,"party":null,"type":"expense","agg":"sum"}
+물음: 저번 주 이마트에서 얼마 긁었지
+{"period":"last_week","category":null,"party":"이마트","type":"expense","agg":"sum"}
+물음: 어제 들어온 돈 목록
+{"period":"yesterday","category":null,"party":null,"type":"income","agg":"list"}
+물음: 올해 핸드폰 요금으로 낸 돈
+{"period":"this_year","category":"주거·통신","party":null,"type":"expense","agg":"sum"}
+물음: 지난달 간식 사 먹은 횟수
+{"period":"last_month","category":"카페·간식","party":null,"type":"expense","agg":"count"}
+물음: 이번 달 보너스 얼마 받았어
+{"period":"this_month","category":"급여","party":null,"type":"income","agg":"sum"}''';
 
 /// 조건 요청을 만든다. [feedback]은 앞선 답이 검증에서 떨어진 까닭이다.
 QueryConditionRequest buildQueryConditionRequest({

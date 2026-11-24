@@ -1,0 +1,20 @@
+{"q":"저번 달에 밥 먹는 데 얼마나 나갔지","period":"lastMonth","category":"식비","type":"expense","agg":"sum"}
+{"q":"이번 달 커피값 다 합치면","period":"thisMonth","category":"카페·간식","type":"expense","agg":"sum"}
+{"q":"요 며칠 스타벅스 몇 번 갔더라","party":"스타벅스","type":"expense","agg":"count"}
+{"q":"지난주에 택시 탄 거 보여줘","period":"lastWeek","category":"교통","type":"expense","agg":"list"}
+{"q":"올해 병원비로 쓴 돈","period":"thisYear","category":"의료·건강","type":"expense","agg":"sum"}
+{"q":"어제 뭐 샀는지 알려줘","period":"yesterday","type":"expense","agg":"list"}
+{"q":"이번 주 쓴 돈 전부","period":"thisWeek","type":"expense","agg":"sum"}
+{"q":"지난달 월급 얼마 들어왔어","period":"lastMonth","category":"급여","type":"income","agg":"sum"}
+{"q":"쿠팡에서 이번 달에 결제한 금액","period":"thisMonth","party":"쿠팡","type":"expense","agg":"sum"}
+{"q":"작년에 경조사로 나간 돈이 얼마야","period":"lastYear","category":"경조사·선물","type":"expense","agg":"sum"}
+{"q":"오늘 지출 내역","period":"today","type":"expense","agg":"list"}
+{"q":"이번 달 하루에 평균 얼마씩 쓰고 있어","period":"thisMonth","type":"expense","agg":"avg"}
+{"q":"지난달 배달의민족 몇 번 시켰지","period":"lastMonth","party":"배달의민족","type":"expense","agg":"count"}
+{"q":"올해 받은 용돈 합계","period":"thisYear","category":"용돈","type":"income","agg":"sum"}
+{"q":"저번 주 마트에서 쓴 거","period":"lastWeek","type":"expense","agg":"sum"}
+{"q":"이번 달 통신비 얼마 냈어","period":"thisMonth","category":"주거·통신","type":"expense","agg":"sum"}
+{"q":"지난달에 옷 사는 데 든 돈","period":"lastMonth","category":"쇼핑","type":"expense","agg":"sum"}
+{"q":"이번 달 수입 다 해서 얼마","period":"thisMonth","type":"income","agg":"sum"}
+{"q":"올해 학원비 총액","period":"thisYear","category":"교육","type":"expense","agg":"sum"}
+{"q":"어제 편의점 간 횟수","period":"yesterday","type":"expense","agg":"count"}

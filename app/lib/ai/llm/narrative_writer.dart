@@ -282,7 +282,9 @@ const _system = '''
 - 숫자는 [집계]에 적힌 것만 쓴다. 더하거나 빼거나 새로 만들지 않는다. 금액은 [집계]에 적힌 표기를 그대로 옮긴다.
 - [집계]에 없는 가게, 분류, 사실을 지어내지 않는다.
 - 전달과 견준 것, 가장 많이 쓴 분류, 예산이나 고정 지출, 눈에 띄는 지출 가운데 중요한 것을 고른다.
-- 훈계하지 않는다. 사실을 담담하게 적는다.''';
+- 훈계하지 않는다. 사실을 담담하게 적는다.
+- 가계부 주인에게 말하듯 쓴다: "○월에는 ○○을 썼습니다.", "전달보다 ○○ 덜 썼습니다.", "가장 많이 쓴 분류는 ○○입니다."처럼. ○ 자리에는 [집계]의 값을 넣는다. '집계', '기록', '데이터'라는 말은 쓰지 않는다.
+- 숫자와 단위는 붙여 쓴다(10월, 186만 250원, 32%, 7번).''';
 
 /// 총평 요청을 만든다. [feedback]은 앞선 글이 검증에서 떨어진 까닭이다.
 ///
@@ -372,7 +374,8 @@ String _factSheet(Map<String, Object?> stats) {
   }
   lines
     ..add('하루 평균 지출: ${koreanWon(statInt(stats['daily_average']))}')
-    ..add('지출이 없던 날: ${statInt(stats['no_spend_days'])}일');
+    // '13일'을 13일이라는 날짜로 읽지 않게 날수라고 밝힌다.
+    ..add('지출이 없던 날의 수: 모두 ${statInt(stats['no_spend_days'])}일(날짜가 아니라 날수)');
   return lines.join('\n');
 }
 
@@ -380,6 +383,61 @@ String _percent(Object? ratio) =>
     ratio is num ? '${(ratio * 100).round()}%' : '';
 
 final _polite = RegExp(r'니다[.!]?$');
+
+final _dayAsDate = RegExp(r'(\d+)일에');
+
+/// [sentences]가 집계 [stats]의 사실을 잘못 옮긴 곳. 없으면 null.
+///
+/// 숫자가 맞아도 뜻이 틀릴 수 있다. 실제 모델(Qwen3.5-2B)에서 본 두 가지를 잡는다.
+/// - 가게를 분류라고 한다('가장 많이 쓴 분류는 스타벅스입니다').
+/// - 지출이 없던 날의 수를 날짜로 쓴다('13일에는 지출이 없었습니다').
+String? misstatedFact(List<String> sentences, Map<String, Object?> stats) {
+  final categories = [
+    for (final c in statList(stats['by_category'])) '${c['name']}',
+  ];
+  final shops = {
+    for (final p in statList(stats['counterparties'])) '${p['name']}',
+    for (final e in statList(stats['largest'])) '${e['name']}',
+  }..removeAll(categories);
+  final noSpendDays = statInt(stats['no_spend_days']);
+
+  for (final sentence in sentences) {
+    if (sentence.contains('분류')) {
+      for (final shop in shops) {
+        if (sentence.contains(shop)) return '"$shop"은 분류가 아니라 가게다.';
+      }
+      if (sentence.contains('가장 많이') &&
+          categories.isNotEmpty &&
+          !sentence.contains(categories.first)) {
+        return '가장 많이 쓴 분류는 ${categories.first}이다.';
+      }
+    }
+    if (sentence.contains('없')) {
+      for (final match in _dayAsDate.allMatches(sentence)) {
+        if (int.parse(match[1]!) == noSpendDays) {
+          return '지출이 없던 날은 날짜가 아니다. 모두 $noSpendDays일이라고 쓴다.';
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/// 문장 앞에 붙은 쉼표 · 마침표 · 공백. 소형 모델은 배열의 쉼표를 문장 안에 한 번 더 쓴다.
+final _leadingPunctuation = RegExp(r'^[\s,.·]+');
+
+/// 숫자와 단위 사이의 공백('10 월', '186 만 250 원', '7 번').
+final _digitUnitGap = RegExp(r'(\d)\s+(억|만|천|원|월|일|년|주|번|건|개|회|%)');
+
+/// '%' 뒤의 공백('32% 를').
+final _percentGap = RegExp(r'%\s+(?=[가-힣])');
+
+/// 모델이 쓴 문장을 다듬는다. 뜻과 숫자는 건드리지 않고 띄어쓰기와 앞의 군더더기만 고친다.
+String _tidy(String sentence) => sentence
+    .replaceFirst(_leadingPunctuation, '')
+    .replaceAllMapped(_digitUnitGap, (m) => '${m[1]}${m[2]}')
+    .replaceAll(_percentGap, '%')
+    .trim();
 
 /// 총평을 쓴다(`docs/SPEC.md` 7.10).
 ///
@@ -395,7 +453,9 @@ class NarrativeWriter {
   Future<NarrativeResult> write(Map<String, Object?> stats) async {
     final engine = this.engine;
     var attempts = 0;
-    if (engine != null) {
+    // 쓴 돈이 없는 달은 할 말이 정해져 있다. 모델에 맡기면 같은 말을 되풀이한다.
+    final hasSpending = statInt(stats['expense']) > 0;
+    if (engine != null && hasSpending) {
       String? feedback;
       for (var attempt = 1; attempt <= 2; attempt++) {
         final request = buildNarrativeRequest(stats, feedback: feedback);
@@ -449,13 +509,17 @@ class NarrativeWriter {
     if (list is! List) return fail('"s" 배열이 없다.');
     final sentences = [
       for (final item in list)
-        if (item is String && item.trim().isNotEmpty) item.trim(),
+        if (item is String && _tidy(item).isNotEmpty) _tidy(item),
     ];
     if (sentences.length != list.length) return fail('빈 문장이 있다.');
     if (sentences.length < 3 || sentences.length > 5) {
       return fail('문장이 ${sentences.length}개다. 3–5문장이어야 한다.');
     }
     for (final sentence in sentences) {
+      // 지시문의 빈칸 표시를 그대로 옮긴 글.
+      if (sentence.contains('○') || sentence.contains('…')) {
+        return fail('"$sentence"에 빈칸 표시가 남아 있다.');
+      }
       if (!_polite.hasMatch(sentence)) {
         return fail('"$sentence"가 "…습니다."로 끝나지 않는다.');
       }
@@ -467,6 +531,8 @@ class NarrativeWriter {
     if (bad.isNotEmpty) {
       return fail('[집계]에 없는 숫자(${bad.join(', ')})가 있다.');
     }
+    final misstated = misstatedFact(sentences, stats);
+    if (misstated != null) return fail(misstated);
     return (text: text, problem: null);
   }
 }

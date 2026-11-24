@@ -349,4 +349,45 @@ void main() {
       expect(result.attempts, 0);
     });
   });
+
+  group('실제 모델에서 본 문제를 다룬다', () {
+    test('숫자와 단위 사이의 공백, 문장 앞의 쉼표를 다듬는다', () async {
+      final engine = ScriptedEngine([
+        sentences([
+          '10 월에는 186 만 250 원을 썼습니다.',
+          ',전달보다 12 만 원 덜 썼습니다.',
+          ', 가장 많이 쓴 분류는 식비(32% 를 차지)입니다.',
+        ]),
+      ]);
+      final result = await NarrativeWriter(engine).write(stats);
+      expect(result.aiModel, 'fake-model');
+      expect(
+        result.text,
+        '10월에는 186만 250원을 썼습니다. 전달보다 12만 원 덜 썼습니다. '
+        '가장 많이 쓴 분류는 식비(32%를 차지)입니다.',
+      );
+    });
+
+    test('가게를 분류라고 하면 버린다', () {
+      expect(misstatedFact(['가장 많이 쓴 분류는 김밥천국입니다.'], stats), contains('김밥천국'));
+      expect(misstatedFact(['가장 많이 쓴 분류는 쇼핑입니다.'], stats), contains('식비'));
+      expect(misstatedFact(['가장 많이 쓴 분류는 식비입니다.'], stats), isNull);
+      expect(misstatedFact(['김밥천국에서 7번 썼습니다.'], stats), isNull);
+    });
+
+    test('지출이 없던 날의 수를 날짜로 쓰면 버린다', () {
+      expect(misstatedFact(['6일에는 지출이 없었습니다.'], stats), contains('6일'));
+      expect(misstatedFact(['지출이 없던 날은 6일입니다.'], stats), isNull);
+      expect(misstatedFact(['14일에는 이마트24에서 썼습니다.'], stats), isNull);
+    });
+
+    test('쓴 돈이 없는 달은 모델에 묻지 않고 문장 틀을 쓴다', () async {
+      final engine = ScriptedEngine([sentences(good)]);
+      final empty = {...stats, 'expense': 0, 'by_category': <Object?>[]};
+      final result = await NarrativeWriter(engine).write(empty);
+      expect(engine.users, isEmpty);
+      expect(result.aiModel, isNull);
+      expect(result.text, templateNarrative(empty));
+    });
+  });
 }
