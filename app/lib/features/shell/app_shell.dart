@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app/background_jobs.dart';
 import '../../app/providers.dart';
+import '../../app/sync_controller.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/breakpoints.dart';
 import '../command/commands.dart';
@@ -298,6 +299,20 @@ class _SideMenu extends ConsumerWidget {
     final theme = Theme.of(context);
     final tokens = context.tokens;
     final pending = ref.watch(pendingChangesProvider).value ?? 0;
+    final signedIn = ref.watch(
+      syncControllerProvider.select((status) => status.signedIn),
+    );
+    final syncFailed = ref.watch(
+      syncControllerProvider.select((status) => status.error != null),
+    );
+    // 로그인했으면 서버와 맞춰졌는지를, 아니면 기기에만 있다는 것을 알린다.
+    final saved = !signedIn
+        ? '이 기기에 저장됨'
+        : syncFailed
+        ? '동기화하지 못함'
+        : pending == 0
+        ? '동기화됨'
+        : '이 기기에 저장됨';
     final path = GoRouterState.of(context).uri.path;
     final extra = _extras.where((d) => d.path == path).firstOrNull;
 
@@ -347,7 +362,7 @@ class _SideMenu extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            pending == 0 ? '이 기기에 저장됨' : '이 기기에 저장됨 · 보낼 변경 $pending건',
+            pending == 0 ? saved : '$saved · 보낼 변경 $pending건',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

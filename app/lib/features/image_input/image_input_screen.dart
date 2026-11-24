@@ -1,4 +1,5 @@
 import 'package:desktop_drop/desktop_drop.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -275,7 +276,10 @@ class _NoModel extends StatelessWidget {
   Widget build(BuildContext context) => SingleChildScrollView(
     child: EmptyState(
       icon: Icons.image_not_supported_outlined,
-      message: '이미지 모델이 없습니다.\n설정 → AI 모델에서 내려받을 수 있습니다.',
+      // 웹에는 기기 안의 모델이 없다. 내려받으라고 하지 않는다.
+      message: kIsWeb
+          ? '웹 앱에서는 이미지를 읽을 수 없습니다.\nWindows 앱에서 쓸 수 있습니다.'
+          : '이미지 모델이 없습니다.\n설정 → AI 모델에서 내려받을 수 있습니다.',
       action: FilledButton(
         key: const ValueKey('image-go-models'),
         onPressed: () => context.go('/settings/models'),

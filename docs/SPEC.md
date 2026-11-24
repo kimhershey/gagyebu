@@ -1,7 +1,11 @@
 # 가계부 — 소프트웨어 설계서
 
-기준: 2026-11-24. 이 문서가 설계의 원본이다. 구현된 것과 앞으로 만들 것을 함께 적고, 장마다 **[구현됨]** · **[예정]** 으로 가른다. 선택의 근거와 조사 내용(기술 비교, 모델 비교, 다른 가계부 앱 조사, 라이선스 검토)은 [소프트웨어 상세 설계안(계획 · 근거)](https://claude.ai/artifact/R7AHGE5GLftfDZYvz3TCKD)에 있다. 두 문서가 다르면 이 문서를 따른다.
+기준: 2026-11-24(v0.1.0). 이 문서가 설계의 원본이다. 절마다 **[구현됨]** 으로 표시하고, 코드는 있지만 이 저장소의 시험과 CI로는 실제 동작을 볼 수 없는 것은 **[구현됨 · 기기에서 확인 필요]** 로 가른다. 구현하면서 설계와 달라진 것은 11장에, 찾은 오류와 남은 문제는 [오류 기록](ERRORS.md)에 있다.
 
+- 읽기용 문서(같은 내용, 7 · 8장은 줄인 판): [가계부 — 소프트웨어 설계서](https://claude.ai/artifact/2ESNVZfVzwYt9YHQdfgTb1)
+- 선택의 근거와 조사 내용(기술 비교, 모델 비교, 다른 가계부 앱 조사, 라이선스 검토): [소프트웨어 상세 설계안(계획 · 근거)](https://claude.ai/artifact/R7AHGE5GLftfDZYvz3TCKD)
+
+문서끼리 다르면 이 문서를 따른다.
 ---
 
 ## 1. 범위와 원칙
@@ -188,14 +192,14 @@ Supabase(PostgreSQL). `supabase/migrations/0001–0004`. **v1에서 서버 스�
 
 인터페이스(`lib/data/server/server_connection.dart`): `AuthService`(현재 사용자, 로그인 · 가입 · 로그아웃, 비밀번호 다시 정하기), `SyncGateway`(`push`, `pull`), `ServerConnection`(둘과 `ledgerIdOf`). 실패는 `AuthFailure(reason)`로 구분한다.
 
-### 4.3 Windows · Android 앱에서의 Google 로그인 [예정]
+### 4.3 Windows · Android 앱에서의 Google 로그인 [구현됨 · 기기에서 확인 필요]
 
 - 앱이 기기의 브라우저로 Google 로그인 화면을 열고, 로그인이 끝나면 주소 `io.github.kimhershey.gagyebu://login-callback`으로 앱에 돌아온다. Android는 매니페스트의 인텐트 필터, Windows는 설치할 때 등록하는 URL 스킴으로 받는다.
 - Supabase의 Redirect URLs에 이 주소를 넣어야 한다(사용자가 설정).
 - 세션은 Android에서는 OS 보안 저장소에 둔다(`flutter_secure_storage`). Windows는 앱 폴더의 파일을 쓴다(v1).
 - 끝 기준: `AuthService.googleAvailable`이 세 플랫폼에서 true이고, 돌아온 주소를 세션으로 바꾸는 경로에 시험이 있다. 실제 왕복은 기기에서 확인한다.
 
-### 4.4 실시간 신호 [예정]
+### 4.4 실시간 신호 [구현됨 · 실제 서버에서 확인 필요]
 
 - 서버는 변경이 적용될 때마다 채널 `ledger:<가계부 ID>`로 `changed` 신호를 보낸다(이미 구현됨).
 - 기기는 로그인해 가계부가 맞춰지면 이 채널을 `private: true`로 구독한다. 신호를 받으면 0.5초 모았다가 받기를 한 번 한다. 자기가 올린 변경의 신호도 오지만 받을 것이 없으므로 해가 없다.
@@ -203,13 +207,13 @@ Supabase(PostgreSQL). `supabase/migrations/0001–0004`. **v1에서 서버 스�
 - 인터페이스: `ServerConnection`에 `Stream<void> Function(String ledgerId) changes`를 더한다.
 - 끝 기준: 가짜 서버가 신호를 내면 1초 안에 받기가 도는 시험. 실서버에서 두 기기가 5초 안에 맞춰지는지는 기기에서 확인한다.
 
-### 4.5 탈퇴 [예정]
+### 4.5 탈퇴 [구현됨]
 
 - 설정 → 계정 → "계정 삭제". 무엇이 지워지는지 보여 주고, 이메일을 그대로 적어야 단추가 켜진다.
 - `delete_my_account()`를 부른다. 성공하면 기기의 가계부 · 대기열 · 작업 기록을 지우고 로그아웃한다. 대기열에 남은 변경은 버린다(올릴 곳이 없다).
 - 끝 기준: 가짜 서버로 흐름 시험. 실서버 동작은 시험 계정으로 이미 확인했다.
 
-### 4.6 충돌 기록 [예정]
+### 4.6 충돌 기록 [구현됨]
 
 - 설정 → "동기화 충돌". 진 쪽의 값과 이긴 쪽의 값을 나란히 보여 준다.
 - "되살리기"는 진 값으로 그 행을 다시 쓴다(새 변경으로 올라간다). 삭제된 행을 되살리는 것도 같다.
@@ -263,7 +267,7 @@ abstract interface class LlmEngine {
 - 취소: 승인취소면 90일 안의 원 거래를 찾아 그 거래의 취소를 제안한다.
 - 경고 7종: 연도 추정, 날짜를 오늘로 둠, 원화 금액 필요, 카드대금일 수 있음, 단위 없는 금액, 상대방 없음, 방향 불일치.
 
-### 5.4 기기 안의 모델 [예정]
+### 5.4 기기 안의 모델 [구현됨 · 기기에서 확인 필요]
 
 | 항목 | 정한 것 |
 | --- | --- |
@@ -463,7 +467,7 @@ abstract interface class VisionEngine {
 
 5장에 적었다. 출처는 문장이면 `nl`, 붙여넣은 글이면 `paste`, 공유로 받은 글이면 `share`.
 
-### 7.5 입력창 [예정]
+### 7.5 입력창 [구현됨]
 
 - 규칙
   - 어느 화면에서나 보인다(6.2). 여러 줄 붙여넣기를 받는다. 최대 20,000자, 넘으면 알리고 자른다.
@@ -477,7 +481,7 @@ abstract interface class VisionEngine {
 - 인터페이스: `composerControllerProvider`(글, 진행 상태, `submit()`, `fill(text)`), `incomingTextProvider`(밖에서 채워 넣을 글).
 - 끝 기준: 한글 조합 중 Enter가 보내지 않는 시험, 붙여넣기 → 검토함 시험, 못 읽었을 때의 안내 시험, 세 배치의 화면 시험.
 
-### 7.6 검토함 [예정] (제안 → 승인)
+### 7.6 검토함 [구현됨] (제안 → 승인)
 
 - 규칙
   - 초안 묶음을 한 번에 본다. 맨 위에 한 줄 요약: "6건 읽음 · 1건 확인 필요 · 안내문 2건 제외".
@@ -493,7 +497,7 @@ abstract interface class VisionEngine {
 - 인터페이스: `reviewSessionProvider`(초안 목록, 포함 여부, 고친 값, `saveAll()`, `discard()`), `InputBatchRepository.saveBatch(drafts, source)`.
 - 끝 기준: 묶음 저장이 원자적인 시험(중간에 실패하면 한 건도 남지 않는다), 이체로 바꿔 저장하는 시험, 경고를 둔 채 저장하면 `needs_review`인 시험, 세 배치에서 내용이 남는 시험.
 
-### 7.7 작업 기록과 되돌리기 [예정]
+### 7.7 작업 기록과 되돌리기 [구현됨]
 
 - 규칙
   - 입력창 · 이미지 입력 · 가져오기로 저장한 묶음마다 언제 · 어떤 경로로 · 몇 건인지 남긴다. 원문은 남기지 않는다. 직접 입력한 거래는 묶음이 아니다.
@@ -545,7 +549,7 @@ abstract interface class VisionEngine {
 - 인터페이스: `MonthSummary.toStatsJson()`, `monthNarrativeProvider(period)`, `NarrativeWriter`(모델) · `templateNarrative(stats)`(문장 틀).
 - 끝 기준: 집계 시험(고정 지출, 예산 대비), 문장 틀 시험, 집계에 없는 숫자를 거르는 시험, 6개월 추이 화면 시험.
 
-### 7.11 예산 [예정]
+### 7.11 예산 [구현됨]
 
 - 규칙
   - 달마다 전체 예산 하나와 분류별 예산을 정한다. 금액은 0 이상.
@@ -558,7 +562,7 @@ abstract interface class VisionEngine {
 - 인터페이스: `BudgetRepository`(`watchBudgets(ledgerId, month)`, `setBudget`, `deleteBudget`, `copyFromPreviousMonth`), `budgetProgressProvider`.
 - 끝 기준: 겹친 행을 고르는 시험, 진행 계산 시험, 화면 시험.
 
-### 7.12 카드 결제 처리 [예정]
+### 7.12 카드 결제 처리 [구현됨]
 
 - 규칙
   - 신용카드로 쓴 돈은 쓴 날의 지출이다. 카드대금이 계좌에서 빠져나가는 것은 **이체**(결제 계좌 → 카드 자산)로 적어 지출에 두 번 잡히지 않게 한다.
@@ -569,7 +573,7 @@ abstract interface class VisionEngine {
 - 인터페이스: `cardDue(account, transactions, today)` → `CardDue{date, amount}`(도메인 함수).
 - 끝 기준: 결제일이 월말을 넘는 달(31일 → 2월)의 시험, 취소 제외 시험, 검토함의 이체 제안 시험.
 
-### 7.13 반복 거래와 할부 [예정]
+### 7.13 반복 거래와 할부 [구현됨]
 
 - 규칙
   - 반복 규칙: 매주 · 매달 · 매년, 간격(1 이상), 다음 날짜, 끝나는 날(선택), 자동 등록 여부, 켜짐/꺼짐.
@@ -587,7 +591,7 @@ abstract interface class VisionEngine {
 
 - 급여일에 맞춰 1–28일 가운데 고른다. 15보다 크면 끝나는 달의 이름을 쓴다(25일 시작이면 10/25–11/24가 "11월"). 29–31일은 받지 않는다(달마다 길이가 달라서).
 
-### 7.15 자연어 조회 [예정]
+### 7.15 자연어 조회 [구현됨]
 
 - 규칙
   - "지난달 식비 얼마야?" 같은 문장에서 **조건**을 읽는다: 기간, 분류, 상대방, 종류, 집계 방식(합계 · 건수 · 평균 · 목록).
@@ -600,7 +604,7 @@ abstract interface class VisionEngine {
 - 조건 JSON(모델용): `{"period":"last_month","category":"식비","party":null,"type":"expense","agg":"sum"}`. `period`는 정해진 기호 가운데 하나, `category`는 분류 이름 가운데 하나.
 - 끝 기준: 문장 30개의 조건 시험, 기간 계산 시험(월 시작일 25일), 조회로 보지 않아야 할 문장 시험("점심 9천원").
 
-### 7.16 내보내기 · 가져오기 [예정]
+### 7.16 내보내기 · 가져오기 [구현됨]
 
 - 규칙
   - 내보내기: 고른 기간의 거래를 CSV(UTF-8, BOM 포함 — Excel이 한글을 바로 연다) 또는 Excel(.xlsx)로. 열: 날짜, 시각, 종류, 금액, 자산, 받는 자산, 상대방, 분류, 메모, 할부, 취소 여부.
@@ -611,7 +615,7 @@ abstract interface class VisionEngine {
 - 인터페이스: `exportTransactions(rows, format)` → 바이트, `parseCsv(bytes)` → 표, `mapRows(table, mapping)` → 초안들. 파일 저장과 고르기는 `file_selector`(웹은 내려받기).
 - 끝 기준: 내보낸 CSV를 다시 가져오면 같은 거래가 되는 시험, CP949 파일 시험, 열 맞추기 시험.
 
-### 7.17 앱 잠금 [예정]
+### 7.17 앱 잠금 [구현됨]
 
 - 규칙
   - 숫자 4–6자리 잠금 번호. 모든 플랫폼. Android는 생체 인증을 함께 켤 수 있다.
@@ -630,7 +634,7 @@ abstract interface class VisionEngine {
 - 인터페이스: `ShareReceiver`(`Stream<String>`), 받은 글은 `incomingTextProvider`에 넣는다. 매니페스트에 `text/plain`의 SEND 인텐트 필터.
 - 끝 기준: 받은 글이 입력창에 채워지는 시험. 실제 공유는 기기에서 확인한다.
 
-### 7.19 첫 실행 안내 [예정]
+### 7.19 첫 실행 안내 [구현됨]
 
 - 규칙: 가입하고 처음 들어오면 홈 맨 위에 안내 카드를 보인다 — ① 자산 등록하기(카드와 계좌를 넣으면 문자를 알아서 잇는다) ② 결제 문자 붙여넣어 보기 ③ (앱) AI 모델 내려받기. 하나씩 끝내면 표시가 바뀌고, "닫기"를 누르거나 다 끝내면 다시 보이지 않는다(`onboarding.done`).
 - 웹에서는 ③ 대신 "홈 화면에 추가"를 안내하고, 브라우저에 저장소 유지(`navigator.storage.persist`)를 청한다.
@@ -671,14 +675,14 @@ gagyebu/
 ├─ README.md               현황, 개발 방법
 ├─ docs/
 │  ├─ SPEC.md              이 문서(설계의 원본)
-│  ├─ PRIVACY.md           개인정보 처리방침 초안            [예정]
+│  ├─ PRIVACY.md           개인정보 처리방침 초안            [구현됨]
 │  ├─ ui-palettes.json     팔레트 색 값
 │  └─ screenshots/
-├─ catalog/                앱이 읽는 공개 파일               [예정]
+├─ catalog/                앱이 읽는 공개 파일               [구현됨]
 │  ├─ models.json          모델 카탈로그
 │  └─ version.json         최신 버전
-├─ installer/              Windows 설치 파일 스크립트        [예정]
-├─ .github/workflows/      ci.yml(시험 · 빌드 · 웹 배포), release.yml · backup.yml [예정]
+├─ installer/              Windows 설치 파일 스크립트        [구현됨]
+├─ .github/workflows/      ci.yml(시험 · 빌드 · 웹 배포), release.yml · backup.yml [구현됨]
 ├─ app/                    Flutter 앱
 ├─ supabase/               서버: migrations/ · tests/ · README.md(규약, 연결 방법)
 └─ eval/                   해석 평가: golden/ · tool/ · reports/ · README.md(실측 기록)
@@ -836,3 +840,26 @@ lib/
 - 웹에서는 브라우저가 저장소를 지울 수 있다(Safari는 7일 동안 열지 않은 사이트). 로그인해 있으면 다시 받는다.
 - 작업 기록은 기기마다 따로다.
 
+---
+
+## 11. 구현하면서 달라진 것
+
+설계서를 쓴 뒤 구현하면서 정한 것이다. 앞 장의 내용과 다르면 이 장이 맞다.
+
+| 주제 | 달라진 내용 |
+| --- | --- |
+| 반복 거래 | 규칙의 `template`에 `anchor_day`(기준 날짜)를 더 적는다. 31일 규칙이 2월을 지나도 3월에 다시 31일로 돌아오게 하려는 것이다 |
+| 기기 설정 키 | `update.checkedAt` · `update.manifest`(업데이트 확인), `model.endpoint.model`(로컬 서버의 모델 이름), `onboarding.done`(첫 실행 안내를 닫았는지)을 더했다 |
+| 이미지 답의 꼴 | 맨 앞에 `kind`(거래 목록 `statement` · 영수증 `receipt` · 그 밖 `other`)를 받고, 영수증이면 `shop`(가게)과 `total`(낸 금액)을 더 받는다. 영수증은 품목의 합과 `total`이 다르면 "확인 필요"를 붙인다 |
+| 이미지 입력 | "확인 필요"가 남은 줄이 포함돼 있으면 검토함으로 보내지 못한다. 고치거나 빼야 한다 |
+| 조회 판별 | 금액이 없고 물음표나 "얼마 · 몇 · 언제 · 뭐 · 보여 · 알려 · 합계 · 평균"이 든 80자 이하의 한 줄은 조회로 본다. 금액이 있으면 물음표가 있어도 거래로 본다 |
+| 모델이 실패했을 때 | 모델이 답을 내지 못한 덩어리는 읽지 못한 것으로 두고 나머지는 계속 읽는다. 한 줄 글이면 규칙으로 다시 읽어 검토함에 올린다. 그래도 한 건도 없으면 "다시 해 보라"고 알린다 |
+| "그만" | 입력창의 "그만"은 기기 안의 모델이 하던 생성까지 멈춘다(`CancellableEngine.cancelAll`) |
+| 내역 | 필터 · 달력 · 일괄 수정은 `data/repositories/transaction_query.dart`와 `features/transactions/`에 있다. 취소된 거래는 기본으로 숨기고 필터에서 켠다 |
+| 딥링크 | `platform/deep_links.dart`는 만들지 않았다. 로그인으로 돌아오는 주소는 `supabase_flutter`가, 공유로 받은 글은 `platform/share_receiver.dart`가 받는다 |
+| 세션 보관 | Android는 OS 보안 저장소(`flutter_secure_storage`, Keystore)에, 웹과 Windows는 `supabase_flutter`의 기본 저장소(브라우저 저장소, 앱 폴더의 파일)에 둔다 |
+| 예산 진행 | 홈의 전체 예산은 `totalBudgetProgressProvider`(`summary_repository.dart`), 예산 화면은 `budgetProgressProvider`(`features/budget/budget_progress.dart`)가 계산한다. 계산식은 같다 |
+| 넓은 화면의 상태 줄 | 로그인했으면 "동기화됨" · "동기화하지 못함"을, 아니면 "이 기기에 저장됨"을 보여 준다 |
+| 생체 인증 | 만들지 않았다. 자리(`biometricAuthProvider`)만 있고 화면에는 나오지 않는다 |
+| 드래그 앤 드롭 | `desktop_drop`은 0.8.0에 묶어 둔다. 0.8.1부터는 Linux 쪽에서 MPL 라이선스인 `dbus`를 끌어온다 |
+| 모델 카탈로그 | `catalog/models.json`의 네 항목은 주소 · 크기 · 해시가 비어 있다. 채우기 전에는 앱에서 내려받을 수 없고, 로컬 서버 주소를 적는 방식만 쓸 수 있다 |
