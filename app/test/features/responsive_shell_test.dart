@@ -136,7 +136,8 @@ void main() {
         await tester.tap(find.text('설정').last);
         await tester.pumpAndSettle();
         expect(find.text('설정'), findsWidgets);
-        expect(find.text('현금'), findsWidgets);
+        // 자산과 분류는 설정에서 고치지 않는다. '관리'의 목록에서 그 화면으로 간다.
+        expect(find.text('월 시작일'), findsOneWidget);
         // 아래쪽 카드는 화면을 내려야 그려진다.
         // 입력창의 글 칸도 스크롤되는 위젯이라, 설정 화면 안의 것을 고른다.
         await tester.scrollUntilVisible(

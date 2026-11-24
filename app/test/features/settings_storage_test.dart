@@ -7,7 +7,9 @@ void main() {
     final services = await createTestServices();
     await pumpApp(tester, services, size: desktop, location: '/settings');
 
-    expect(find.text('저장과 동기화'), findsOneWidget);
+    // 저장 위치는 '정보' 칸에, 로그인 상태는 '계정' 칸에 있다.
+    expect(find.text('정보'), findsOneWidget);
+    expect(find.text('시험용 메모리'), findsOneWidget);
     // 저장을 시작한 날을 보여 준다. 들어올 때마다 오늘로 바뀌면 저장소가 비워진 것이다.
     expect(
       find.textContaining('2026년 11월 17일부터 여기에 저장하고 있습니다'),
