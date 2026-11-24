@@ -110,6 +110,41 @@ cd app
 dart run tool/llm_eval.dart --mode=rules --set=holdout
 ```
 
+## 릴리스
+
+`app/pubspec.yaml`의 `version`을 올려 커밋한 뒤 같은 버전의 태그를 올린다. 태그의 첫 줄은 앱의 업데이트 안내에 그대로 보인다.
+
+```bash
+git tag -a v0.2.0 -m "예산 화면을 더했습니다."
+git push origin v0.2.0
+```
+
+`v*` 태그가 올라가면 `.github/workflows/release.yml`이 다음을 한다.
+
+1. 태그와 `pubspec.yaml`의 버전이 같은지 본다. 다르면 멈춘다.
+2. Android APK(`gagyebu-android-arm64.apk`)와 Windows 설치 파일(`gagyebu-setup.exe`, `installer/`)을 CI와 같은 방법으로 빌드한다.
+3. 둘을 GitHub Releases에 올린다.
+4. 앱이 업데이트를 확인할 때 읽는 `catalog/version.json`의 `latest`와 내려받기 주소를 그 태그로 고쳐 `main`에 커밋한다. `v0.2.0-beta.1`처럼 `-`가 든 태그는 시험판으로 올리고 이 파일은 건드리지 않는다.
+
+저장소 비밀값(Settings → Secrets and variables → Actions)은 없어도 CI와 릴리스가 돈다. 넣으면 아래가 켜진다. 값은 저장소의 파일에 적지 않는다.
+
+| 비밀값 | 쓰는 곳 | 없으면 |
+| --- | --- | --- |
+| `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | APK 서명(CI, 릴리스) | 디버그 키로 서명한다. 실행마다 키가 달라질 수 있어, 그렇게 만든 APK 위에는 다음 버전을 덮어 설치하지 못할 수 있다 |
+| `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE` | 서버 백업과 삭제 표시 정리(`.github/workflows/backup.yml`) | 건너뛴다 |
+
+서명 키는 한 번 만들어 계속 쓴다. 키를 잃거나 바꾸면 이미 설치한 사람은 앱을 지웠다가 다시 깔아야 한다.
+
+```bash
+keytool -genkeypair -v -keystore gagyebu-release.jks -storetype PKCS12 \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias gagyebu
+base64 -w 0 gagyebu-release.jks     # 이 출력이 ANDROID_KEYSTORE_BASE64 (macOS는 base64 -i gagyebu-release.jks)
+```
+
+`ANDROID_KEY_ALIAS`는 위의 `-alias` 값이다. PKCS12 형식은 키의 비밀번호가 키 파일의 비밀번호와 같으므로 `ANDROID_KEYSTORE_PASSWORD`와 `ANDROID_KEY_PASSWORD`에 같은 값을 넣는다. 키 파일과 비밀번호는 저장소 밖에도 보관한다.
+
+키 파일(`*.jks`)은 저장소에 넣지 않는다(`.gitignore`에 있다). 백업을 켜는 방법과 복원 절차는 `supabase/README.md`의 "백업과 복원", 설치 파일을 PC에서 만드는 방법은 `installer/README.md`에 있다.
+
 ## 지키는 것
 
 - 붙여넣은 원문과 이미지는 기기 밖으로 나가지 않는다. 서버에는 사용자가 확인해 저장한 거래와 설정만 올라간다.

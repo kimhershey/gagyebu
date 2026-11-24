@@ -1,0 +1,7 @@
+{
+  "latest": "0.1.0",
+  "min": "0.1.0",
+  "notes": "첫 버전입니다.",
+  "android": "https://github.com/kimhershey/gagyebu/releases/latest/download/gagyebu-android-arm64.apk",
+  "windows": "https://github.com/kimhershey/gagyebu/releases/latest/download/gagyebu-setup.exe"
+}
