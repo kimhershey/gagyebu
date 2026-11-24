@@ -47,18 +47,19 @@ Android · Windows 앱은 **빌드가 되는 것까지만** 확인했다. 기기
 | --- | --- | --- | --- |
 | 16 | `desktop_drop` 0.8.1 이상을 쓰면 MPL 라이선스인 `dbus`가 따라 들어온다 | 새 버전이 Linux 쪽 구현에 `dbus`를 쓴다 | 0.8.0에 묶어 둔다(`pubspec.yaml`의 `'>=0.8.0 <0.8.1'`). 버전을 올릴 때 라이선스 검사(`dart run tool/check_licenses.dart`)가 막는다 |
 
-### 1.4 CI 빌드
+### 1.4 CI 빌드와 릴리스
 
 | # | 증상 | 원인 | 고친 방법 |
 | --- | --- | --- | --- |
 | 17 | Android 빌드가 `:file_selector_android:lintVitalAnalyzeRelease`에서 실패한다("Unexpected failure during lint analysis") | 릴리스용 검사 도구(lint)가 JDK 17에서 JDK 21 전용 기능(`List.removeLast()`)을 불러 스스로 죽는다. 파일 고르기 플러그인의 자바 주석을 읽을 때만 난다. 우리 코드의 문제가 아니다 | 플러그인 모듈에는 릴리스용 lint를 돌리지 않는다(`app/android/build.gradle.kts`). 앱 모듈의 lint는 그대로 돈다 |
+| 18 | 릴리스 태그(`v0.1.0`)를 올릴 수 없다 | 자동 작업 환경은 브랜치만 올릴 수 있고 태그는 막혀 있다(git 푸시도, GitHub API로 만드는 것도 프록시가 403으로 거절한다) | 릴리스 작업을 Actions에서 손으로 돌릴 수 있게 했다(`release.yml`의 `workflow_dispatch`). `main`에서 돌리면 `pubspec.yaml`의 버전으로 태그를 정하고, 릴리스를 만들면서 태그도 만든다. 이 길로 v0.1.0을 올렸다 |
 
 ### 1.5 작업하다 낸 실수
 
 | # | 무엇 | 다시 하지 않으려면 |
 | --- | --- | --- |
-| 18 | 웹을 빌드할 때 서버 키의 이름을 틀리게 줘서(`SUPABASE_ANON_KEY`) 로그인 없는 앱이 만들어졌다. 오류 없이 빌드된다 | 이름은 `SUPABASE_URL`과 `SUPABASE_PUBLISHABLE_KEY`다. 둘 중 하나라도 비면 **조용히** 로그인 없는 빌드가 된다. CI의 값(`ci.yml`의 `SERVER_DEFINES`)을 그대로 쓴다 |
-| 19 | `main`에 올린 직후 다른 병합이 들어와 CI 실행이 취소됐다 | 취소된 실행이 아니라 그 뒤의 실행이 통과했는지 본다 |
+| 19 | 웹을 빌드할 때 서버 키의 이름을 틀리게 줘서(`SUPABASE_ANON_KEY`) 로그인 없는 앱이 만들어졌다. 오류 없이 빌드된다 | 이름은 `SUPABASE_URL`과 `SUPABASE_PUBLISHABLE_KEY`다. 둘 중 하나라도 비면 **조용히** 로그인 없는 빌드가 된다. CI의 값(`ci.yml`의 `SERVER_DEFINES`)을 그대로 쓴다 |
+| 20 | `main`에 올린 직후 다른 병합이 들어와 CI 실행이 취소됐다 | 취소된 실행이 아니라 그 뒤의 실행이 통과했는지 본다 |
 
 ---
 
@@ -69,13 +70,12 @@ Android · Windows 앱은 **빌드가 되는 것까지만** 확인했다. 기기
 | # | 무엇 | 영향 | 해야 할 일 |
 | --- | --- | --- | --- |
 | A | **앱에서 모델을 내려받을 수 없다.** `catalog/models.json`의 네 항목은 주소 · 크기 · 해시가 비어 있다 | Windows · Android 앱의 "AI 모델" 화면에 받을 수 있는 모델이 없다. 규칙으로 읽는 것과, 내 PC의 모델 서버 주소를 적는 방식은 된다 | 모델 파일을 올려 둔 주소와 크기, SHA-256을 `catalog/models.json`과 `app/assets/catalog/models.json`에 채운다 |
-| B | **APK를 서명할 키가 없으면 디버그 키로 서명한 APK가 올라간다** | 그 APK를 설치한 사람은 다음 버전을 덮어 설치하지 못한다(지웠다가 다시 깔아야 한다) | 저장소 Settings → Secrets에 `ANDROID_KEYSTORE_BASE64` · `ANDROID_KEYSTORE_PASSWORD` · `ANDROID_KEY_ALIAS` · `ANDROID_KEY_PASSWORD`를 넣고 릴리스를 다시 돌린다 |
+| B | **v0.1.0의 APK는 디버그 키로 서명됐다.** 서명 키가 저장소 비밀값에 없었다 | 그 APK를 설치한 사람은 다음 버전을 덮어 설치하지 못한다(지웠다가 다시 깔아야 한다) | 저장소 Settings → Secrets에 `ANDROID_KEYSTORE_BASE64` · `ANDROID_KEYSTORE_PASSWORD` · `ANDROID_KEY_ALIAS` · `ANDROID_KEY_PASSWORD`를 넣고 릴리스를 다시 돌린다 |
 | C | 생체 인증(지문 · 얼굴)으로 잠금을 푸는 기능이 없다 | 앱 잠금은 숫자 번호로만 푼다 | `local_auth`(BSD-3)를 더하고 `biometricAuthProvider`를 잇는다. 기기에서 확인해야 한다 |
 | D | 백업 작업의 산출물은 암호화돼 있지만, 공개 저장소라 GitHub에 로그인한 사람은 누구나 내려받을 수 있다 | 암호(`BACKUP_PASSPHRASE`)가 약하면 위험하다 | 긴 무작위 암호를 쓴다. 더 안전하게 하려면 저장소를 비공개로 하거나 백업을 다른 저장소로 보낸다 |
 | E | 메일(비밀번호 다시 정하기)은 Supabase의 기본 메일 서버로 나간다 | 시간당 몇 통만 보낼 수 있다 | 여러 사람이 쓰려면 Supabase → Authentication → Emails에서 SMTP를 잇는다 |
 | F | 접근성 모드를 켠 브라우저의 콘솔에 "Null check operator used on a null value"가 찍힐 때가 있다 | 화면 동작에는 영향이 없다. Flutter 웹 엔진의 글 입력 접근성 코드에서 난다 | Flutter를 올릴 때 다시 본다 |
 | G | 예산이 얼마나 찼는지를 홈과 예산 화면이 각자 계산한다 | 지금은 식이 같다. 한쪽만 고치면 숫자가 달라질 수 있다 | 하나로 합친다 |
-| H | **릴리스 태그(`v0.1.0`)를 올리지 못했다.** 자동 작업 환경은 브랜치만 올릴 수 있고 태그는 막혀 있다(git 푸시도, GitHub API로 만드는 것도 프록시가 403으로 거절한다) | `main`과 웹 배포는 끝났지만 Releases에 APK와 Windows 설치 파일이 아직 없다 | 릴리스 작업을 손으로 돌릴 수 있게 고쳤다. 저장소의 **Actions → 릴리스 → Run workflow**(브랜치 `main`)를 누르면 태그까지 만들어진다. 또는 자기 컴퓨터에서 `git tag -a v0.1.0 -m "첫 버전입니다." origin/main` → `git push origin v0.1.0`. 손으로 돌리는 길은 아직 한 번도 실제로 돌려 보지 못했다 |
 
 설계에서 일부러 정한 한계(충돌은 행 단위, 카드 결제 예정액은 어림, 앱 잠금은 화면만 가림, 브라우저가 저장소를 지울 수 있음)는 [설계서 10장](SPEC.md)에 있다.
 
