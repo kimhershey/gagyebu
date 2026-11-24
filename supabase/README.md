@@ -184,7 +184,8 @@ sync_pull(p_ledger_id uuid, p_since bigint, p_limit integer default 500) returns
    - Google Cloud Console에서 OAuth 클라이언트(웹 애플리케이션)를 만든다. 승인된 리디렉션 URI에 `https://<프로젝트>.supabase.co/auth/v1/callback`을 넣는다.
    - Supabase 대시보드의 Authentication → Providers → Google에 클라이언트 ID와 비밀값을 넣는다.
    - Authentication → URL Configuration의 Redirect URLs에 웹 앱 주소(예: `https://kimhershey.github.io/gagyebu/`)를 넣는다. 로컬에서 시험하려면 `http://localhost:*`도 넣는다.
-4. Project URL과 publishable 키를 앱 빌드에 넣는다(저장소 `README.md`의 "개발"). 이 두 값은 공개해도 된다. service_role 키와 DB 비밀번호는 어디에도 넣지 않는다.
+4. 이메일 로그인은 처음부터 켜져 있다(Authentication → Providers → Email). 가입하면 확인 메일의 링크를 눌러야 로그인된다(Confirm email). Supabase가 기본으로 주는 메일 발송은 시험용이라 보낼 수 있는 주소와 횟수에 제한이 있다. 여러 사람이 가입하게 하려면 메일 서버(SMTP)를 연결하거나 Confirm email을 끈다.
+5. Project URL과 publishable 키를 앱 빌드에 넣는다(저장소 `README.md`의 "개발"). 이 두 값은 공개해도 된다. service_role 키와 DB 비밀번호는 어디에도 넣지 않는다.
 
 앱은 로그인하면 `profiles`에서 제 가계부를 찾고(`id = auth.uid()`), `sync_push` · `sync_pull`만 부른다. 처음 로그인한 기기는 그동안 기기에 적어 둔 거래 · 자산 · 분류를 계정의 가계부로 옮긴다. 이름과 종류가 같은 기본 분류 · 자산은 서버 것을 쓰고, 나머지는 새 행으로 올린다(`app/lib/data/sync/ledger_adoption.dart`).
 

@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 로그인과 서버 동기화에 쓴다. 없으면 배포용 빌드가 서버에 닿지 못한다. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="가계부"
         android:name="${applicationName}"

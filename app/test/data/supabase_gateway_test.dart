@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gagyebu/data/server/server_connection.dart';
 import 'package:gagyebu/data/server/supabase_connection.dart';
 import 'package:gagyebu/data/sync/sync_gateway.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 
 void main() {
   final requests = <http.Request>[];
@@ -127,5 +128,123 @@ void main() {
       SupabaseSyncGateway(supabase).pull(ledgerId: 'ledger-1', since: 0),
       throwsA(isA<PostgrestException>()),
     );
+  });
+
+  group('이메일 로그인', () {
+    /// 로그인 요청마다 [status]와 [body]로 답하는 서버에 붙은 로그인 서비스.
+    SupabaseAuthService auth(int status, Map<String, Object?> body) {
+      requests.clear();
+      return SupabaseAuthService(
+        SupabaseClient(
+          'https://example.supabase.co',
+          'sb_publishable_test',
+          authOptions: const AuthClientOptions(
+            authFlowType: AuthFlowType.implicit,
+            autoRefreshToken: false,
+          ),
+          httpClient: MockClient((request) async {
+            requests.add(request);
+            return http.Response(
+              jsonEncode(body),
+              status,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+              request: request,
+            );
+          }),
+        ),
+      );
+    }
+
+    Map<String, Object?> user({required List<Object?> identities}) => {
+      'id': '00000000-0000-4000-8000-000000000001',
+      'aud': 'authenticated',
+      'email': 'new@example.com',
+      'app_metadata': <String, Object?>{},
+      'user_metadata': <String, Object?>{},
+      'identities': identities,
+      'created_at': '2026-11-24T00:00:00Z',
+    };
+
+    Matcher fails(AuthFailureReason reason) =>
+        throwsA(isA<AuthFailure>().having((f) => f.reason, 'reason', reason));
+
+    test('비밀번호가 틀리면 그 까닭을 알려 준다', () async {
+      final service = auth(400, {
+        'code': 400,
+        'error_code': 'invalid_credentials',
+        'msg': 'Invalid login credentials',
+      });
+      await expectLater(
+        service.signInWithPassword(email: 'me@example.com', password: 'nope'),
+        fails(AuthFailureReason.invalidCredentials),
+      );
+      expect(requests.single.url.path, '/auth/v1/token');
+      expect(requests.single.url.queryParameters['grant_type'], 'password');
+    });
+
+    test('메일 확인이 끝나지 않은 계정은 따로 알려 준다', () async {
+      final service = auth(400, {
+        'code': 400,
+        'error_code': 'email_not_confirmed',
+        'msg': 'Email not confirmed',
+      });
+      await expectLater(
+        service.signInWithPassword(email: 'me@example.com', password: 'pw'),
+        fails(AuthFailureReason.emailNotConfirmed),
+      );
+    });
+
+    test('가입하면 확인 메일을 보냈다고 답한다', () async {
+      final service = auth(
+        200,
+        user(
+          identities: [
+            {
+              'id': 'i-1',
+              'identity_id': 'i-1',
+              'user_id': '00000000-0000-4000-8000-000000000001',
+              'identity_data': <String, Object?>{},
+              'provider': 'email',
+              'created_at': '2026-11-24T00:00:00Z',
+              'last_sign_in_at': '2026-11-24T00:00:00Z',
+            },
+          ],
+        ),
+      );
+      expect(
+        await service.signUpWithPassword(
+          email: 'new@example.com',
+          password: 'secret2',
+        ),
+        SignUpResult.confirmationSent,
+      );
+      expect(requests.single.url.path, '/auth/v1/signup');
+    });
+
+    test('이미 가입한 주소면 서버가 오류 없이 답해도 알아본다', () async {
+      final service = auth(200, user(identities: const []));
+      await expectLater(
+        service.signUpWithPassword(
+          email: 'new@example.com',
+          password: 'secret2',
+        ),
+        fails(AuthFailureReason.alreadyRegistered),
+      );
+    });
+
+    test('확인 메일을 너무 자주 보내면 잠시 뒤에 하라고 알려 준다', () async {
+      final service = auth(429, {
+        'code': 429,
+        'error_code': 'over_email_send_rate_limit',
+        'msg': 'email rate limit exceeded',
+      });
+      await expectLater(
+        service.signUpWithPassword(
+          email: 'new@example.com',
+          password: 'secret2',
+        ),
+        fails(AuthFailureReason.rateLimited),
+      );
+    });
   });
 }

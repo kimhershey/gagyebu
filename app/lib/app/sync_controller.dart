@@ -86,14 +86,22 @@ class SyncController extends Notifier<SyncStatus> {
     return SyncStatus(SyncPhase.syncing, user: user);
   }
 
-  /// Google 로그인을 시작한다.
-  Future<void> signIn() async {
-    try {
-      await _server?.auth.signInWithGoogle();
-    } catch (e) {
-      state = SyncStatus(SyncPhase.signedOut, error: '$e');
-    }
+  AuthService get _auth {
+    final server = _server;
+    if (server == null) throw const AuthFailure(AuthFailureReason.unknown);
+    return server.auth;
   }
+
+  /// Google 로그인을 시작한다. 하지 못하면 [AuthFailure]를 던진다.
+  Future<void> signInWithGoogle() => _auth.signInWithGoogle();
+
+  /// 이메일과 비밀번호로 로그인한다. 하지 못하면 [AuthFailure]를 던진다.
+  Future<void> signInWithPassword(String email, String password) =>
+      _auth.signInWithPassword(email: email, password: password);
+
+  /// 이메일과 비밀번호로 계정을 만든다. 하지 못하면 [AuthFailure]를 던진다.
+  Future<SignUpResult> signUpWithPassword(String email, String password) =>
+      _auth.signUpWithPassword(email: email, password: password);
 
   /// 로그아웃한다. 기기의 가계부는 그대로 둔다.
   Future<void> signOut() async {

@@ -8,6 +8,7 @@ import 'package:gagyebu/app/bootstrap.dart';
 import 'package:gagyebu/app/providers.dart';
 import 'package:gagyebu/core/local_date.dart';
 import 'package:gagyebu/data/db/database.dart';
+import 'package:gagyebu/data/device_flags.dart';
 import 'package:gagyebu/data/repositories/ledger_repository.dart';
 import 'package:gagyebu/data/server/server_connection.dart';
 import 'package:gagyebu/data/sync/ledger_adoption.dart';
@@ -21,22 +22,58 @@ import '../features/test_app.dart';
 class FakeAuth implements AuthService {
   final _changes = StreamController<AuthUser?>.broadcast();
 
-  /// 다음에 로그인할 사용자.
+  /// 다음에 Google로 로그인할 사용자.
   AuthUser next = const AuthUser(id: 'user-1', email: 'me@example.com');
+
+  /// 이메일로 가입한 계정: 이메일 → (비밀번호, 사용자 ID).
+  final accounts = <String, (String, String)>{
+    'me@example.com': ('secret1', 'user-1'),
+  };
+
+  /// 가입하면 확인 메일부터 보내는 서버인지.
+  bool confirmEmail = true;
 
   @override
   AuthUser? currentUser;
 
   @override
-  bool canSignInHere = true;
+  bool googleAvailable = true;
 
   @override
   Stream<AuthUser?> get userChanges => _changes.stream;
 
+  void _enter(AuthUser user) {
+    currentUser = user;
+    _changes.add(user);
+  }
+
   @override
-  Future<void> signInWithGoogle() async {
-    currentUser = next;
-    _changes.add(currentUser);
+  Future<void> signInWithGoogle() async => _enter(next);
+
+  @override
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    final account = accounts[email];
+    if (account == null || account.$1 != password) {
+      throw const AuthFailure(AuthFailureReason.invalidCredentials);
+    }
+    _enter(AuthUser(id: account.$2, email: email));
+  }
+
+  @override
+  Future<SignUpResult> signUpWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    if (accounts.containsKey(email)) {
+      throw const AuthFailure(AuthFailureReason.alreadyRegistered);
+    }
+    accounts[email] = (password, 'user-${accounts.length + 1}');
+    if (confirmEmail) return SignUpResult.confirmationSent;
+    _enter(AuthUser(id: accounts[email]!.$2, email: email));
+    return SignUpResult.signedIn;
   }
 
   @override
@@ -53,7 +90,11 @@ void main() {
   late Map<String, String> ledgers;
   final opened = <AppServices>[];
 
+  /// 앱처럼 시작할 때 로그인 안내 화면을 보여 줄지 따지게 한다.
+  late bool welcome;
+
   setUp(() {
+    welcome = false;
     dir = Directory.systemTemp.createTempSync('gagyebu-login-test');
     server = FakeSyncServer(clock: DateTime.now);
     auth = FakeAuth();
@@ -78,6 +119,10 @@ void main() {
         gateway: server,
         ledgerIdOf: (userId) async => ledgers[userId],
       ),
+      showWelcome:
+          welcome &&
+          auth.currentUser == null &&
+          !await DeviceFlags(db).loginSkipped(),
     );
     opened.add(services);
     return services;
@@ -97,6 +142,24 @@ void main() {
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
+    await tester.pumpAndSettle();
+  }
+
+  /// 설정의 '로그인'으로 로그인 화면에 가서 Google로 로그인한다.
+  Future<void> signInWithGoogle(WidgetTester tester) async {
+    await tester.tap(find.byKey(const ValueKey('sign-in')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('auth-google')));
+    await settle(tester);
+  }
+
+  /// 안내 화면부터 시작하는 앱을 띄운다.
+  Future<void> startAtWelcome(WidgetTester tester) async {
+    welcome = true;
+    tester.view.physicalSize = phone;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(Bootstrap(open: open));
     await tester.pumpAndSettle();
   }
 
@@ -123,8 +186,7 @@ void main() {
     await addLunch(opened.single);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('sign-in')));
-    await settle(tester);
+    await signInWithGoogle(tester);
 
     // 가계부가 바뀌어 앱이 다시 열렸다. 보던 화면(설정)으로 돌아와 있다.
     expect(opened, hasLength(2));
@@ -158,8 +220,7 @@ void main() {
 
   testWidgets('다른 기기에서 올린 거래를 받아 온다', (tester) async {
     await start(tester);
-    await tester.tap(find.byKey(const ValueKey('sign-in')));
-    await settle(tester);
+    await signInWithGoogle(tester);
     expect(find.text('me@example.com'), findsOneWidget);
 
     // 같은 계정의 다른 기기가 거래를 올린다.
@@ -211,8 +272,7 @@ void main() {
 
   testWidgets('다른 계정이 쓰던 기기에서는 지우고 받을지 묻는다', (tester) async {
     await start(tester);
-    await tester.tap(find.byKey(const ValueKey('sign-in')));
-    await settle(tester);
+    await signInWithGoogle(tester);
     await addLunch(opened.last);
     await tester.pump(const Duration(seconds: 3));
     await settle(tester);
@@ -222,8 +282,7 @@ void main() {
     // 다른 사람이 이 기기에서 로그인한다.
     ledgers['user-2'] = server.seedLedger(ownerId: 'user-2');
     auth.next = const AuthUser(id: 'user-2', email: 'other@example.com');
-    await tester.tap(find.byKey(const ValueKey('sign-in')));
-    await settle(tester);
+    await signInWithGoogle(tester);
     expect(find.text('이 기기에는 다른 계정의 가계부가 있습니다'), findsOneWidget);
     // 아직 아무것도 지우지 않았다.
     expect(
@@ -245,12 +304,178 @@ void main() {
     await disposeApp(tester, opened.last);
   });
 
-  testWidgets('로그인 흐름이 준비되지 않은 플랫폼에서는 단추를 보이지 않는다', (tester) async {
-    auth.canSignInHere = false;
+  testWidgets('Google 로그인이 준비되지 않은 플랫폼에서는 이메일 입력만 보인다', (tester) async {
+    auth.googleAvailable = false;
     await start(tester);
-    expect(find.text('로그인하지 않았습니다'), findsOneWidget);
-    expect(find.textContaining('웹 앱에서 로그인할 수 있습니다'), findsOneWidget);
-    expect(find.byKey(const ValueKey('sign-in')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('sign-in')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('auth-google')), findsNothing);
+    expect(find.textContaining('Google 로그인을 준비하고 있습니다'), findsOneWidget);
+    expect(find.byKey(const ValueKey('auth-email')), findsOneWidget);
     await disposeApp(tester, opened.last);
+  });
+
+  group('처음 시작할 때', () {
+    testWidgets('계정 만들기와 로그인을 고르는 화면부터 보인다', (tester) async {
+      await startAtWelcome(tester);
+      expect(find.byKey(const ValueKey('welcome-signup')), findsOneWidget);
+      expect(find.byKey(const ValueKey('welcome-login')), findsOneWidget);
+      expect(find.byKey(const ValueKey('nav-bottom')), findsNothing);
+
+      // 두 화면 모두 Google 로그인과 이메일 · 비밀번호 입력을 함께 보여 준다.
+      await tester.tap(find.byKey(const ValueKey('welcome-signup')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('auth-google')), findsOneWidget);
+      expect(find.byKey(const ValueKey('auth-email')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('auth-password-confirm')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('auth-switch')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('auth-google')), findsOneWidget);
+      expect(find.byKey(const ValueKey('auth-email')), findsOneWidget);
+      expect(find.byKey(const ValueKey('auth-password-confirm')), findsNothing);
+
+      // 뒤로 가면 고르는 화면이다. 가계부로는 넘어가지 못한다.
+      await tester.tap(find.byKey(const ValueKey('auth-back')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('welcome-login')), findsOneWidget);
+      await disposeApp(tester, opened.last);
+    });
+
+    testWidgets('로그인하지 않고 쓰기로 하면 다음부터는 묻지 않는다', (tester) async {
+      await startAtWelcome(tester);
+      await tester.tap(find.byKey(const ValueKey('welcome-skip')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('nav-bottom')), findsOneWidget);
+      expect(find.byKey(const ValueKey('welcome-login')), findsNothing);
+      await disposeApp(tester, opened.last);
+
+      // 앱을 다시 켠다.
+      await tester.pumpWidget(Bootstrap(key: UniqueKey(), open: open));
+      await tester.pumpAndSettle();
+      expect(opened, hasLength(2));
+      expect(opened.last.showWelcome, isFalse);
+      expect(find.byKey(const ValueKey('nav-bottom')), findsOneWidget);
+      await disposeApp(tester, opened.last);
+    });
+
+    testWidgets('이메일과 비밀번호로 로그인하면 가계부가 열린다', (tester) async {
+      await startAtWelcome(tester);
+      await addLunch(opened.single);
+      await tester.tap(find.byKey(const ValueKey('welcome-login')));
+      await tester.pumpAndSettle();
+
+      // 비밀번호가 틀리면 그 자리에서 알려 준다.
+      await tester.enterText(
+        find.byKey(const ValueKey('auth-email')),
+        'me@example.com',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('auth-password')),
+        'wrong-password',
+      );
+      await tester.tap(find.byKey(const ValueKey('auth-submit')));
+      await tester.pumpAndSettle();
+      expect(find.text('이메일이나 비밀번호가 맞지 않습니다'), findsOneWidget);
+      expect(auth.currentUser, isNull);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('auth-password')),
+        'secret1',
+      );
+      await tester.tap(find.byKey(const ValueKey('auth-submit')));
+      await settle(tester);
+
+      // 기기에 적어 둔 거래가 계정으로 올라가고 가계부 화면이 열린다.
+      expect(opened.last.ledgerId, ledgers['user-1']);
+      expect(server.rows('transactions').single['receiver'], '김밥천국');
+      expect(find.byKey(const ValueKey('nav-bottom')), findsOneWidget);
+      expect(find.byKey(const ValueKey('welcome-login')), findsNothing);
+      expect(find.byKey(const ValueKey('auth-submit')), findsNothing);
+      await disposeApp(tester, opened.last);
+    });
+
+    testWidgets('Google로 로그인해도 가계부가 열린다', (tester) async {
+      await startAtWelcome(tester);
+      await tester.tap(find.byKey(const ValueKey('welcome-signup')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('auth-google')));
+      await settle(tester);
+      expect(opened.last.ledgerId, ledgers['user-1']);
+      expect(find.byKey(const ValueKey('nav-bottom')), findsOneWidget);
+      await disposeApp(tester, opened.last);
+    });
+
+    testWidgets('계정을 만들면 확인 메일 안내를 보여 준다', (tester) async {
+      await startAtWelcome(tester);
+      await tester.tap(find.byKey(const ValueKey('welcome-signup')));
+      await tester.pumpAndSettle();
+
+      Future<void> fill(String email, String password, String confirm) async {
+        await tester.enterText(find.byKey(const ValueKey('auth-email')), email);
+        await tester.enterText(
+          find.byKey(const ValueKey('auth-password')),
+          password,
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('auth-password-confirm')),
+          confirm,
+        );
+        await tester.tap(find.byKey(const ValueKey('auth-submit')));
+        await tester.pumpAndSettle();
+      }
+
+      // 입력이 틀리면 서버에 묻지 않는다.
+      await fill('new@example', 'secret2', 'secret2');
+      expect(find.text('이메일 주소를 확인해 주세요'), findsOneWidget);
+      await fill('new@example.com', '12345', '12345');
+      expect(find.text('비밀번호는 6자 이상이어야 합니다'), findsOneWidget);
+      await fill('new@example.com', 'secret2', 'secret3');
+      expect(find.text('비밀번호가 서로 다릅니다'), findsOneWidget);
+      expect(auth.accounts, hasLength(1));
+
+      await fill('me@example.com', 'secret2', 'secret2');
+      expect(find.text('이미 가입한 이메일입니다. 로그인해 주세요'), findsOneWidget);
+
+      await fill('new@example.com', 'secret2', 'secret2');
+      expect(find.byKey(const ValueKey('auth-sent')), findsOneWidget);
+      expect(find.textContaining('new@example.com'), findsOneWidget);
+      expect(auth.currentUser, isNull);
+
+      // 안내에서 로그인 화면으로 넘어간다.
+      await tester.tap(find.text('로그인 화면으로'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('auth-password-confirm')), findsNothing);
+      expect(find.byKey(const ValueKey('auth-submit')), findsOneWidget);
+      await disposeApp(tester, opened.last);
+    });
+
+    testWidgets('메일 확인이 없는 서버에서는 계정을 만들자마자 가계부가 열린다', (tester) async {
+      auth.confirmEmail = false;
+      ledgers['user-2'] = server.seedLedger(ownerId: 'user-2');
+      await startAtWelcome(tester);
+      await tester.tap(find.byKey(const ValueKey('welcome-signup')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('auth-email')),
+        'new@example.com',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('auth-password')),
+        'secret2',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('auth-password-confirm')),
+        'secret2',
+      );
+      await tester.tap(find.byKey(const ValueKey('auth-submit')));
+      await settle(tester);
+      expect(opened.last.ledgerId, ledgers['user-2']);
+      expect(find.byKey(const ValueKey('nav-bottom')), findsOneWidget);
+      await disposeApp(tester, opened.last);
+    });
   });
 }

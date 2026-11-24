@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../data/db/connection/connection.dart';
 import '../data/db/database.dart';
+import '../data/device_flags.dart';
 import '../data/repositories/ledger_repository.dart';
 import '../data/server/server_config.dart';
 import '../data/server/server_connection.dart';
@@ -24,6 +25,7 @@ Future<AppServices> openAppServices() async {
   final ledger = await (db.select(
     db.ledgers,
   )..where((l) => l.id.equals(ledgerId))).getSingleOrNull();
+  final server = await _connectServer();
   return AppServices(
     db: db,
     repository: repository,
@@ -32,7 +34,12 @@ Future<AppServices> openAppServices() async {
     persistent: opened.persistent,
     startedAt: ledger?.createdAt,
     takenOver: opened.takenOver,
-    server: await _connectServer(),
+    server: server,
+    // 로그인할 수 있는데 하지 않았고, 하지 않겠다고 한 적도 없으면 로그인 안내부터 보여 준다.
+    showWelcome:
+        server != null &&
+        server.auth.currentUser == null &&
+        !await DeviceFlags(db).loginSkipped(),
   );
 }
 
@@ -83,6 +90,9 @@ class _BootstrapState extends State<Bootstrap> {
   /// (웹 엔진은 앱이 주소를 넘겨받은 뒤에는 시작 주소를 '/'로 돌려 버린다.)
   GoRouter? _router;
 
+  /// 로그인 안내 화면을 거쳐야 하는 동안 true. 라우터가 본다.
+  final _welcomeGate = ValueNotifier(false);
+
   @override
   void initState() {
     super.initState();
@@ -92,6 +102,7 @@ class _BootstrapState extends State<Bootstrap> {
   @override
   void dispose() {
     _router?.dispose();
+    _welcomeGate.dispose();
     super.dispose();
   }
 
@@ -111,6 +122,7 @@ class _BootstrapState extends State<Bootstrap> {
     services.then((services) {
       if (opened != _opened) return;
       _current = services;
+      _welcomeGate.value = services.showWelcome;
       services.takenOver?.then((_) {
         if (!mounted || opened != _opened) return;
         _current = null;
@@ -153,6 +165,7 @@ class _BootstrapState extends State<Bootstrap> {
               appRestartProvider.overrideWithValue(() {
                 if (mounted) setState(_open);
               }),
+              welcomeGateProvider.overrideWithValue(_welcomeGate),
             ],
             // 화면이 떠 있는 동안 로그인 상태를 따라가며 동기화한다.
             child: Consumer(
@@ -160,7 +173,9 @@ class _BootstrapState extends State<Bootstrap> {
                 ref.watch(syncControllerProvider);
                 return child!;
               },
-              child: GagyebuApp(router: _router ??= createRouter()),
+              child: GagyebuApp(
+                router: _router ??= createRouter(welcomeGate: _welcomeGate),
+              ),
             ),
           );
         }

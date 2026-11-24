@@ -22,7 +22,60 @@ class AuthUser {
   int get hashCode => Object.hash(id, email);
 }
 
+/// 로그인하지 못한 까닭. 화면이 사용자에게 보여 줄 말을 고르는 데 쓴다.
+enum AuthFailureReason {
+  /// 이메일이나 비밀번호가 맞지 않는다.
+  invalidCredentials,
+
+  /// 가입은 했지만 메일의 확인 링크를 아직 누르지 않았다.
+  emailNotConfirmed,
+
+  /// 이미 가입한 이메일이다.
+  alreadyRegistered,
+
+  /// 비밀번호가 서버의 기준에 못 미친다.
+  weakPassword,
+
+  /// 이메일 주소의 꼴이 맞지 않는다.
+  invalidEmail,
+
+  /// 짧은 시간에 너무 많이 요청했다(확인 메일 보내기 포함).
+  rateLimited,
+
+  /// 서버가 새 가입을 받지 않는다.
+  signupDisabled,
+
+  /// 서버에 닿지 못했다.
+  network,
+
+  unknown,
+}
+
+class AuthFailure implements Exception {
+  const AuthFailure(this.reason, [this.detail]);
+
+  final AuthFailureReason reason;
+
+  /// 서버가 준 말. 까닭을 알 수 없을 때 보여 준다.
+  final String? detail;
+
+  @override
+  String toString() =>
+      'AuthFailure(${reason.name}${detail == null ? '' : ': $detail'})';
+}
+
+/// 가입 요청의 결과.
+enum SignUpResult {
+  /// 바로 로그인됐다.
+  signedIn,
+
+  /// 확인 메일을 보냈다. 메일의 링크를 눌러야 로그인할 수 있다.
+  confirmationSent,
+}
+
 /// 로그인.
+///
+/// 로그인에 실패하면 [AuthFailure]를 던진다.
 abstract interface class AuthService {
   /// 지금 로그인한 사용자. 없으면 null.
   AuthUser? get currentUser;
@@ -30,11 +83,24 @@ abstract interface class AuthService {
   /// 로그인 · 로그아웃할 때마다 알린다.
   Stream<AuthUser?> get userChanges;
 
-  /// 이 플랫폼에서 로그인 흐름이 준비됐는지.
-  bool get canSignInHere;
+  /// 이 플랫폼에서 Google 로그인을 쓸 수 있는지. 이메일 로그인은 어디서나 된다.
+  bool get googleAvailable;
 
-  /// Google 로그인을 시작한다. 웹에서는 로그인 페이지로 갔다가 돌아온다.
+  /// Google 로그인을 시작한다. 웹에서는 로그인 페이지로 갔다가 돌아온다. 처음이면 계정이
+  /// 만들어진다.
   Future<void> signInWithGoogle();
+
+  /// 이메일과 비밀번호로 로그인한다.
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  });
+
+  /// 이메일과 비밀번호로 계정을 만든다.
+  Future<SignUpResult> signUpWithPassword({
+    required String email,
+    required String password,
+  });
 
   /// 이 기기에서만 로그아웃한다. 기기의 가계부는 지우지 않는다.
   Future<void> signOut();

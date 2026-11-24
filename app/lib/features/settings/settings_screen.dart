@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/providers.dart';
@@ -479,8 +480,6 @@ class _AccountTile extends ConsumerWidget {
     final status = ref.watch(syncControllerProvider);
     final pending = ref.watch(pendingChangesProvider).value ?? 0;
     final controller = ref.read(syncControllerProvider.notifier);
-    final canSignIn =
-        ref.watch(appServicesProvider).server?.auth.canSignInHere ?? false;
     final theme = Theme.of(context);
 
     Widget tile(IconData icon, String title, String subtitle, {Color? color}) =>
@@ -500,10 +499,10 @@ class _AccountTile extends ConsumerWidget {
       case SyncPhase.unavailable:
         return tile(
           Icons.cloud_off_outlined,
-          '로그인은 아직 없습니다',
+          '이 앱에는 로그인이 들어 있지 않습니다',
           pending == 0
-              ? '다음 단계에서 Google 로그인과 기기 간 동기화가 들어옵니다'
-              : '기기 간 동기화가 들어오면 올릴 변경 $pending건을 모아 두었습니다',
+              ? '가계부는 이 기기 안에만 저장됩니다'
+              : '가계부는 이 기기 안에만 저장됩니다(올리지 않은 변경 $pending건)',
         );
       case SyncPhase.signedOut:
         return Column(
@@ -512,22 +511,21 @@ class _AccountTile extends ConsumerWidget {
             tile(
               Icons.cloud_off_outlined,
               '로그인하지 않았습니다',
-              [
-                canSignIn
-                    ? '로그인하면 이 가계부를 계정에 올리고 다른 기기와 맞춥니다'
-                    : '이 앱에서의 로그인은 준비 중입니다. 지금은 웹 앱에서 로그인할 수 있습니다',
-                if (status.error != null) '로그인하지 못했습니다: ${status.error}',
-              ].join('\n'),
+              '로그인하면 이 가계부를 계정에 올리고 다른 기기와 맞춥니다',
             ),
-            if (canSignIn)
-              actions([
-                FilledButton.tonalIcon(
-                  key: const ValueKey('sign-in'),
-                  onPressed: controller.signIn,
-                  icon: const Icon(Icons.login, size: 18),
-                  label: const Text('Google로 로그인'),
-                ),
-              ]),
+            actions([
+              FilledButton.tonalIcon(
+                key: const ValueKey('sign-in'),
+                onPressed: () => context.push('/welcome/login'),
+                icon: const Icon(Icons.login, size: 18),
+                label: const Text('로그인'),
+              ),
+              TextButton(
+                key: const ValueKey('sign-up'),
+                onPressed: () => context.push('/welcome/signup'),
+                child: const Text('계정 만들기'),
+              ),
+            ]),
           ],
         );
       case SyncPhase.differentAccount:
