@@ -4,6 +4,7 @@ library;
 import '../core/local_date.dart';
 import 'llm/llm_engine.dart';
 import 'llm/llm_text_parser.dart';
+import 'llm/local_model_engine.dart';
 import 'parsed_transaction.dart';
 import 'text/name_candidates.dart';
 import 'text/paste_parser.dart';
@@ -58,12 +59,23 @@ Future<InterpretedInput> interpretInput(
         resolved.add(item);
         continue;
       }
-      final result = await llm.parse(
-        item.raw,
-        today: today,
-        expenseCategories: expenseCategories,
-        incomeCategories: incomeCategories,
-      );
+      final LlmParseResult result;
+      try {
+        result = await llm.parse(
+          item.raw,
+          today: today,
+          expenseCategories: expenseCategories,
+          incomeCategories: incomeCategories,
+        );
+      } on GenerationCancelled {
+        // 사용자가 멈췄다. 남은 덩어리도 모델에 넘기지 않게 부르는 쪽에 알린다.
+        rethrow;
+      } on Object {
+        // 모델을 올리지 못했거나 추론이 실패했다. 이 덩어리는 읽지 못한 것으로 두고
+        // 나머지는 계속 읽는다. 모델이 고장 나도 규칙으로 읽은 것은 잃지 않는다.
+        resolved.add(item);
+        continue;
+      }
       if (result.failed) {
         resolved.add(item);
       } else if (!result.isTransaction) {
