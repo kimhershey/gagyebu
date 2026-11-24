@@ -1,27 +1,35 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/providers.dart';
+import '../../app/theme/tokens.dart';
 import '../../core/formatters.dart';
 import '../../core/local_date.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/ledger_repository.dart';
 import '../../domain/enums.dart';
+import 'amount_input.dart';
+import 'transaction_tile.dart';
 
 /// 거래를 직접 넣거나 고치는 폼.
 ///
-/// [existing]이 있으면 고치고, 없으면 새로 만든다.
+/// [existing]이 있으면 고치고, 없으면 새로 만든다. 저장하면 거래는 확인한 것이 된다
+/// (`docs/SPEC.md` 7.3: 확인이 필요하던 거래도 고쳐서 저장하면 `confirmed`).
 class TransactionEditor extends ConsumerStatefulWidget {
   const TransactionEditor({
     super.key,
     this.existing,
     this.initialType = TxType.expense,
+    this.initialDate,
     required this.onDone,
   });
 
   final TxRow? existing;
   final TxType initialType;
+
+  /// 새 거래의 날짜. 없으면 오늘이다.
+  final LocalDate? initialDate;
 
   /// 저장 · 삭제 · 닫기가 끝났을 때.
   final VoidCallback onDone;
@@ -44,12 +52,18 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
   bool _canceled = false;
   bool _saving = false;
 
+  /// 적은 상대방에 예전에 고른 분류. 없으면 null이다.
+  String? _suggestedCategoryId;
+
+  /// 상대방을 빨리 고쳐 적을 때 늦게 온 답이 새 답을 덮지 않게 차례를 센다.
+  int _lookup = 0;
+
   @override
   void initState() {
     super.initState();
     final row = widget.existing;
     _type = row?.type ?? widget.initialType;
-    _date = row?.occurredOn ?? ref.read(todayProvider);
+    _date = row?.occurredOn ?? widget.initialDate ?? ref.read(todayProvider);
     _amount = TextEditingController(
       text: row == null ? '' : formatNumber(row.amount),
     );
@@ -87,6 +101,26 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
     if (picked != null) setState(() => _date = LocalDate.fromDateTime(picked));
   }
 
+  /// 적은 상대방에 예전에 고른 분류가 있는지 찾는다.
+  Future<void> _lookUpCategory(String party) async {
+    final seq = ++_lookup;
+    final String? found;
+    try {
+      found = await ref
+          .read(repositoryProvider)
+          .categoryForCounterparty(ref.read(ledgerIdProvider), party);
+    } catch (_) {
+      // 제안은 없어도 되는 것이라 못 찾으면 조용히 넘어간다.
+      return;
+    }
+    if (!mounted || seq != _lookup) return;
+    setState(() => _suggestedCategoryId = found);
+  }
+
+  void _say(String message) =>
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final repo = ref.read(repositoryProvider);
@@ -109,6 +143,8 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
       source: widget.existing?.source ?? TxSource.manual,
       aiModel: widget.existing?.aiModel,
       canceled: _canceled,
+      // 사용자가 보고 저장한 것이므로 확인한 거래다.
+      status: TxStatus.confirmed,
     );
     setState(() => _saving = true);
     try {
@@ -126,10 +162,8 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
       if (!mounted) return;
       ref.read(selectedPeriodProvider.notifier).show(_date);
       widget.onDone();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('저장하지 못했습니다: $e')));
+    } catch (_) {
+      if (mounted) _say('저장하지 못했습니다. 적은 내용을 확인하고 다시 시도해 주세요.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -156,8 +190,12 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
       ),
     );
     if (confirmed != true) return;
-    await ref.read(repositoryProvider).deleteTransaction(existing.id);
-    if (mounted) widget.onDone();
+    try {
+      await ref.read(repositoryProvider).deleteTransaction(existing.id);
+      if (mounted) widget.onDone();
+    } catch (_) {
+      if (mounted) _say('지우지 못했습니다. 잠시 뒤에 다시 시도해 주세요.');
+    }
   }
 
   @override
@@ -184,7 +222,14 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
     final categoryValue = options.any((c) => c.id == _categoryId)
         ? _categoryId
         : null;
-    final isNew = widget.existing == null;
+    final existing = widget.existing;
+    final isNew = existing == null;
+    final tokens = context.tokens;
+    final visuals = ref.watch(categoryVisualsProvider);
+    // 지금 고른 분류와 다를 때만 제안한다. 종류가 다른 분류는 options에 없어 걸러진다.
+    final suggestion = _suggestedCategoryId == _categoryId
+        ? null
+        : options.where((c) => c.id == _suggestedCategoryId).firstOrNull;
 
     return Form(
       key: _formKey,
@@ -212,8 +257,13 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
               ),
             ],
           ),
+          if (existing?.status == TxStatus.needsReview) ...[
+            const SizedBox(height: 4),
+            _ReviewBanner(onConfirm: _saving ? null : _save),
+          ],
           const SizedBox(height: 8),
           SegmentedButton<TxType>(
+            showSelectedIcon: false,
             segments: const [
               ButtonSegment(value: TxType.expense, label: Text('지출')),
               ButtonSegment(value: TxType.income, label: Text('수입')),
@@ -231,7 +281,7 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
             controller: _amount,
             autofocus: isNew,
             keyboardType: TextInputType.number,
-            inputFormatters: [_ThousandsFormatter()],
+            inputFormatters: [ThousandsFormatter()],
             decoration: const InputDecoration(labelText: '금액', suffixText: '원'),
             validator: (value) {
               final amount = parseAmountInput(value ?? '');
@@ -324,7 +374,27 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
                     ? '보낸 사람 · 기관'
                     : '받는 사람 · 가맹점',
               ),
+              onChanged: _lookUpCategory,
             ),
+            if (suggestion != null) ...[
+              const SizedBox(height: 8),
+              Material(
+                color: tokens.accentSoft,
+                borderRadius: BorderRadius.circular(tokens.radius),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  key: const ValueKey('editor-suggest-category'),
+                  dense: true,
+                  leading: Icon(
+                    visuals[suggestion.id]?.icon ?? Icons.label_outline,
+                    color: visuals[suggestion.id]?.color(tokens),
+                  ),
+                  title: Text('예전에 고른 분류: ${suggestion.name}'),
+                  trailing: const Text('적용'),
+                  onTap: () => setState(() => _categoryId = suggestion.id),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
               key: ValueKey('category-$_type-$categoryValue'),
@@ -334,7 +404,22 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
               items: [
                 const DropdownMenuItem<String?>(child: Text('분류 없음')),
                 for (final c in options)
-                  DropdownMenuItem<String?>(value: c.id, child: Text(c.name)),
+                  DropdownMenuItem<String?>(
+                    value: c.id,
+                    child: Row(
+                      children: [
+                        CategoryDot(categoryId: c.id),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            c.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
               onChanged: (value) => setState(() => _categoryId = value),
             ),
@@ -360,25 +445,71 @@ class _TransactionEditorState extends ConsumerState<TransactionEditor> {
             onPressed: _saving ? null : _save,
             child: Text(isNew ? '저장' : '고친 내용 저장'),
           ),
+          if (existing != null) ...[
+            const SizedBox(height: 8),
+            // 반복 거래 화면이 이 거래를 틀로 규칙을 만든다(7.13).
+            OutlinedButton.icon(
+              key: const ValueKey('editor-recurring'),
+              onPressed: _saving
+                  ? null
+                  : () => context.go('/recurring?from=${existing.id}'),
+              icon: const Icon(Icons.repeat, size: 18),
+              label: const Text('반복으로 등록'),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// 금액 입력란에 천 단위 쉼표를 넣는다.
-class _ThousandsFormatter extends TextInputFormatter {
+/// 확인이 필요한 거래라는 알림과 "확인함" 단추.
+class _ReviewBanner extends StatelessWidget {
+  const _ReviewBanner({required this.onConfirm});
+
+  final VoidCallback? onConfirm;
+
   @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final amount = parseAmountInput(newValue.text);
-    if (amount == null) return const TextEditingValue();
-    final text = formatNumber(amount);
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = context.tokens;
+    return Container(
+      key: const ValueKey('editor-review-banner'),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      decoration: BoxDecoration(
+        color: tokens.warnSoft,
+        borderRadius: BorderRadius.circular(tokens.radius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.error_outline, size: 20, color: tokens.warn),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '확인이 필요한 거래입니다. 내용이 맞으면 "확인함"을 누르고, 다르면 고쳐서 저장해 주세요.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: tokens.warn,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              key: const ValueKey('editor-confirm'),
+              onPressed: onConfirm,
+              style: TextButton.styleFrom(foregroundColor: tokens.warn),
+              icon: const Icon(Icons.check, size: 18),
+              label: const Text('확인함'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
