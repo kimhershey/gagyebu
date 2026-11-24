@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gagyebu/data/server/server_connection.dart';
+import 'package:gagyebu/data/server/session_storage.dart';
 import 'package:gagyebu/data/server/supabase_connection.dart';
 import 'package:gagyebu/data/sync/sync_gateway.dart';
 import 'package:http/http.dart' as http;
@@ -76,6 +77,34 @@ class _FakeSocket extends StreamChannelMixin<dynamic>
   ) {
     if (_incoming.isClosed) return;
     _incoming.add(jsonEncode([joinRef, ref, topic, event, payload]));
+  }
+}
+
+/// 메모리에 두는 보안 저장소. [broken]이면 OS의 키를 잃은 것처럼 읽고 쓰기가 실패한다.
+class _MemorySecrets implements SecretStore {
+  final values = <String, String>{};
+  bool broken = false;
+
+  void _check() {
+    if (broken) throw Exception('keystore unavailable');
+  }
+
+  @override
+  Future<String?> read(String key) async {
+    _check();
+    return values[key];
+  }
+
+  @override
+  Future<void> write(String key, String value) async {
+    _check();
+    values[key] = value;
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    _check();
+    values.remove(key);
   }
 }
 
@@ -600,6 +629,82 @@ void main() {
       expect(socket.sent.any((m) => m[3] == 'phx_leave'), isTrue);
       expect(supabase.getChannels(), isEmpty);
       await supabase.dispose();
+    });
+  });
+
+  group('세션 보관', () {
+    const key = 'sb-example-auth-token';
+
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    test('Android에서만 보안 저장소를 쓰고, 이름은 기본 저장소와 같다', () {
+      for (final platform in TargetPlatform.values) {
+        debugDefaultTargetPlatformOverride = platform;
+        final storage = sessionStorageFor('https://example.supabase.co');
+        if (platform == TargetPlatform.android) {
+          expect((storage! as SecureSessionStorage).key, key);
+        } else {
+          // 웹 · Windows는 패키지의 기본 저장소를 쓴다.
+          expect(storage, isNull, reason: '$platform');
+        }
+      }
+    });
+
+    test('세션을 보안 저장소에 적고, 읽고, 지운다', () async {
+      final secrets = _MemorySecrets();
+      final storage = SecureSessionStorage(
+        key: key,
+        store: secrets,
+        legacy: () async => (read: (_) => null, remove: (_) async => true),
+      );
+      await storage.initialize();
+      expect(await storage.hasAccessToken(), isFalse);
+
+      await storage.persistSession('{"access_token":"t"}');
+      expect(secrets.values, {key: '{"access_token":"t"}'});
+      expect(await storage.hasAccessToken(), isTrue);
+      expect(await storage.accessToken(), '{"access_token":"t"}');
+
+      await storage.removePersistedSession();
+      expect(secrets.values, isEmpty);
+      expect(await storage.hasAccessToken(), isFalse);
+    });
+
+    test('일반 저장소에 남아 있던 세션은 옮기고 지운다', () async {
+      final secrets = _MemorySecrets();
+      final old = {key: '{"access_token":"old"}', 'theme.tone': 'quiet'};
+      final storage = SecureSessionStorage(
+        key: key,
+        store: secrets,
+        legacy: () async =>
+            (read: (k) => old[k], remove: (k) async => old.remove(k) != null),
+      );
+      await storage.initialize();
+      expect(await storage.accessToken(), '{"access_token":"old"}');
+      // 평문으로 남기지 않는다. 다른 설정은 건드리지 않는다.
+      expect(old, {'theme.tone': 'quiet'});
+
+      // 보안 저장소에 이미 더 새로운 세션이 있으면 그것을 둔다.
+      old[key] = '{"access_token":"stale"}';
+      await storage.persistSession('{"access_token":"new"}');
+      await storage.initialize();
+      expect(await storage.accessToken(), '{"access_token":"new"}');
+      expect(old.containsKey(key), isFalse);
+    });
+
+    test('보안 저장소를 읽고 쓰지 못해도 로그인은 이어진다', () async {
+      final secrets = _MemorySecrets()..broken = true;
+      final storage = SecureSessionStorage(
+        key: key,
+        store: secrets,
+        legacy: () async => throw Exception('prefs unavailable'),
+      );
+      // 어느 것도 예외를 밖으로 내지 않는다. 세션이 없는 것으로 본다.
+      await storage.initialize();
+      expect(await storage.hasAccessToken(), isFalse);
+      expect(await storage.accessToken(), isNull);
+      await storage.persistSession('{"access_token":"t"}');
+      await storage.removePersistedSession();
     });
   });
 }
