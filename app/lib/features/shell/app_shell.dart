@@ -214,7 +214,10 @@ class _BottomComposerState extends ConsumerState<_BottomComposer> {
 
   void _report() {
     if (!mounted) return;
-    final height = context.size?.height ?? 0;
+    // 다른 화면에 가려 배치되지 않은 동안에는 크기가 없다. 그때는 그대로 둔다.
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final height = box.size.height;
     if ((ref.read(_composerHeightProvider) - height).abs() > 0.5) {
       ref.read(_composerHeightProvider.notifier).set(height);
     }
