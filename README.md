@@ -31,19 +31,21 @@
 ## 폴더
 
 ```
-app/                 Flutter 앱 (lib/, android/, windows/, web/)
+app/                 Flutter 앱 (lib/, test/, tool/, android/, windows/, web/)
+  lib/app/           앱 시작, 테마, 화면 이동, 상태 제공, 동기화 실행
   lib/core/          날짜, 형식, 창 너비 등급
   lib/domain/        열거형, 기본 분류, 월 기간, 월 집계
-  lib/data/          로컬 DB(Drift), 저장소, 동기화 엔진, 서버 연결(server/)
-  lib/ai/            거래 초안, 해석 순서(input_interpreter)
-  lib/ai/text/       문자 형식 규칙, 금액 · 날짜 · 이름 후보 규칙
-  lib/ai/llm/        모델에 보낼 요청(프롬프트 · 문법), 출력 검증, 추론 서버 연결
-  lib/features/      shell, home, transactions, input, stats, settings
+  lib/features/      화면: shell, home, transactions, input, stats, settings
+  lib/ai/            입력 해석: 순서(input_interpreter), 규칙(text/), 모델(llm/)
+  lib/data/          로컬 DB(db/), 저장소(repositories/), 동기화(sync/), 서버 연결(server/)
   tool/              웹 빌드 준비, 라이선스 검사, 해석 평가(llm_eval)
-supabase/            서버 SQL과 시험 (supabase/README.md)
+supabase/            서버 SQL과 시험, 동기화 규약 (supabase/README.md)
 eval/                골든 세트 · 홀드아웃 표본, 생성 스크립트, 실측 기록
-.github/workflows/   시험, 서버 SQL 검증, Windows · Android · 웹 빌드
+docs/                설계 요약(DESIGN.md), 화면
+.github/workflows/   시험, 서버 SQL 검증, Windows · Android · 웹 빌드, 웹 배포
 ```
+
+설계 전체와 파일별 설명은 [docs/DESIGN.md](docs/DESIGN.md)에 있다.
 
 ## 개발
 
