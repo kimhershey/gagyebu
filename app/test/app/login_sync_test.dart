@@ -4,8 +4,11 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gagyebu/app/app.dart';
 import 'package:gagyebu/app/bootstrap.dart';
 import 'package:gagyebu/app/providers.dart';
+import 'package:gagyebu/app/sync_controller.dart';
 import 'package:gagyebu/core/local_date.dart';
 import 'package:gagyebu/data/db/database.dart';
 import 'package:gagyebu/data/repositories/ledger_repository.dart';
@@ -114,6 +117,22 @@ class FakeAuth implements AuthService {
     currentUser = null;
     _changes.add(null);
   }
+
+  /// 서버에서 지운 계정의 사용자 ID들.
+  final deletedUsers = <String>[];
+
+  /// 계정 삭제가 실패해야 하면 그 까닭을 넣어 둔다.
+  AuthFailure? deleteFailure;
+
+  @override
+  Future<void> deleteAccount() async {
+    final failure = deleteFailure;
+    if (failure != null) throw failure;
+    final user = currentUser!;
+    deletedUsers.add(user.id);
+    accounts.removeWhere((_, account) => account.$2 == user.id);
+    await signOut();
+  }
 }
 
 void main() {
@@ -123,12 +142,16 @@ void main() {
   late Map<String, String> ledgers;
   final opened = <AppServices>[];
 
+  /// 계정의 가계부를 찾는 요청이 실패해야 하면 넣어 둔다(서버에 닿지 못할 때).
+  Object? ledgerLookupError;
+
   setUp(() {
     dir = Directory.systemTemp.createTempSync('gagyebu-login-test');
     server = FakeSyncServer(clock: DateTime.now);
     auth = FakeAuth();
     ledgers = {'user-1': server.seedLedger(ownerId: 'user-1')};
     opened.clear();
+    ledgerLookupError = null;
   });
 
   tearDown(() => dir.deleteSync(recursive: true));
@@ -146,7 +169,11 @@ void main() {
       server: ServerConnection(
         auth: auth,
         gateway: server,
-        ledgerIdOf: (userId) async => ledgers[userId],
+        ledgerIdOf: (userId) async {
+          final error = ledgerLookupError;
+          if (error != null) throw error;
+          return ledgers[userId];
+        },
       ),
       showWelcome: auth.currentUser == null,
     );
@@ -177,6 +204,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('auth-google')));
     await settle(tester);
+  }
+
+  /// 설정 화면의 단추를 누른다. 화면 아래에 있으면 올려서 누른다.
+  Future<void> tapInSettings(WidgetTester tester, String key) async {
+    final button = find.byKey(ValueKey(key));
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
   }
 
   Future<void> openSettings(WidgetTester tester) async {
@@ -229,7 +264,7 @@ void main() {
     expect(find.textContaining('올릴 변경'), findsNothing);
 
     // 로그아웃하면 안내 화면으로 돌아간다. 기기의 가계부는 그대로다.
-    await tester.tap(find.byKey(const ValueKey('sign-out')));
+    await tapInSettings(tester, 'sign-out');
     await settle(tester);
     expect(find.byKey(const ValueKey('welcome-login')), findsOneWidget);
     expect(find.byKey(const ValueKey('sign-out')), findsNothing);
@@ -283,7 +318,7 @@ void main() {
     // '지금 동기화'는 바로 서버를 확인한다.
     final db = opened.last.db;
     expect(await db.select(db.ledgerTransactions).get(), isEmpty);
-    await tester.tap(find.byKey(const ValueKey('sync-now')));
+    await tapInSettings(tester, 'sync-now');
     await settle(tester);
     expect(
       (await db.select(db.ledgerTransactions).get()).single.receiver,
@@ -301,7 +336,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await settle(tester);
     await openSettings(tester);
-    await tester.tap(find.byKey(const ValueKey('sign-out')));
+    await tapInSettings(tester, 'sign-out');
     await settle(tester);
 
     // 다른 사람이 이 기기에서 로그인한다. 지우고 받을지 묻는 설정 화면으로 간다.
@@ -315,7 +350,7 @@ void main() {
       hasLength(1),
     );
 
-    await tester.tap(find.byKey(const ValueKey('replace-local')));
+    await tapInSettings(tester, 'replace-local');
     await settle(tester);
     expect(opened.last.ledgerId, ledgers['user-2']);
     expect(find.text('other@example.com'), findsOneWidget);
@@ -338,6 +373,98 @@ void main() {
     expect(find.textContaining('Google 로그인을 준비하고 있습니다'), findsOneWidget);
     expect(find.byKey(const ValueKey('auth-email')), findsOneWidget);
     await disposeApp(tester, opened.last);
+  });
+
+  group('가계부를 맞추다 실패했을 때', () {
+    /// 서버에 닿지 못하는 채로 로그인한다. 가계부를 맞추지 못한 채 설정 화면에 선다.
+    Future<void> signInOffline(WidgetTester tester) async {
+      ledgerLookupError = Exception('offline');
+      await start(tester);
+      await addLunch(opened.single);
+      await signInWithGoogle(tester);
+      expect(opened, hasLength(1));
+      await openSettings(tester);
+      expect(find.textContaining('동기화하지 못했습니다'), findsOneWidget);
+      expect(server.rows('transactions'), isEmpty);
+    }
+
+    testWidgets('"지금 동기화"를 누르면 맞추는 것부터 다시 한다', (tester) async {
+      await signInOffline(tester);
+
+      // 아직 서버에 닿지 못한다. 다시 눌러도 그대로다.
+      await tapInSettings(tester, 'sync-now');
+      await settle(tester);
+      expect(opened, hasLength(1));
+      expect(find.textContaining('동기화하지 못했습니다'), findsOneWidget);
+
+      ledgerLookupError = null;
+      await tapInSettings(tester, 'sync-now');
+      await settle(tester);
+      expect(opened.last.ledgerId, ledgers['user-1']);
+      expect(server.rows('transactions').single['receiver'], '김밥천국');
+      expect(find.textContaining('동기화했습니다'), findsOneWidget);
+      await disposeApp(tester, opened.last);
+    });
+
+    testWidgets('가만히 두어도 다음 주기에 다시 맞춘다', (tester) async {
+      await signInOffline(tester);
+
+      ledgerLookupError = null;
+      await tester.pump(SyncController.pollInterval);
+      await settle(tester);
+      expect(opened.last.ledgerId, ledgers['user-1']);
+      expect(server.rows('transactions').single['receiver'], '김밥천국');
+      expect(find.textContaining('동기화했습니다'), findsOneWidget);
+      await disposeApp(tester, opened.last);
+    });
+  });
+
+  group('계정 삭제', () {
+    SyncController controller(WidgetTester tester) =>
+        ProviderScope.containerOf(tester.element(find.byType(GagyebuApp)))
+            .read(syncControllerProvider.notifier);
+
+    testWidgets('서버의 계정을 지우고 로그아웃된다', (tester) async {
+      await start(tester);
+      await signInWithGoogle(tester);
+      await addLunch(opened.last);
+      await tester.pump(const Duration(seconds: 3));
+      await settle(tester);
+
+      await controller(tester).deleteAccount();
+      await settle(tester);
+      expect(auth.deletedUsers, ['user-1']);
+      expect(auth.currentUser, isNull);
+      expect(find.byKey(const ValueKey('welcome-login')), findsOneWidget);
+      // 기기의 가계부는 여기서 지우지 않는다(설정의 계정 화면이 지운다).
+      expect(
+        await opened.last.db.select(opened.last.db.ledgerTransactions).get(),
+        hasLength(1),
+      );
+      await disposeApp(tester, opened.last);
+    });
+
+    testWidgets('서버가 거절하면 까닭을 알리고 로그인한 채로 둔다', (tester) async {
+      await start(tester);
+      await signInWithGoogle(tester);
+      auth.deleteFailure = const AuthFailure(AuthFailureReason.network);
+
+      await expectLater(
+        controller(tester).deleteAccount(),
+        throwsA(
+          isA<AuthFailure>().having(
+            (f) => f.reason,
+            'reason',
+            AuthFailureReason.network,
+          ),
+        ),
+      );
+      await settle(tester);
+      expect(auth.deletedUsers, isEmpty);
+      expect(auth.currentUser?.id, 'user-1');
+      expect(find.byKey(const ValueKey('welcome-login')), findsNothing);
+      await disposeApp(tester, opened.last);
+    });
   });
 
   group('처음 시작할 때', () {

@@ -7,6 +7,7 @@ import '../../domain/enums.dart';
 import '../../domain/month_period.dart';
 import '../../domain/month_summary.dart';
 import '../db/database.dart';
+import 'outbox_writer.dart';
 
 /// 거래 한 건을 저장할 때 넘기는 값.
 class TransactionInput {
@@ -27,6 +28,7 @@ class TransactionInput {
     this.source = TxSource.manual,
     this.aiModel,
     this.canceled = false,
+    this.status = TxStatus.confirmed,
   });
 
   final TxType type;
@@ -57,6 +59,9 @@ class TransactionInput {
 
   /// 전액 취소된 거래. 집계에서 뺍니다.
   final bool canceled;
+
+  /// 확인이 더 필요한 거래면 [TxStatus.needsReview]. 내역에서 모아 본다.
+  final TxStatus status;
 }
 
 /// 화면에 보여 줄 거래: 행에 자산 · 분류 이름을 붙인 것.
@@ -124,14 +129,16 @@ class LedgerRepository {
     this.db, {
     DateTime Function()? clock,
     String Function()? idGenerator,
-  }) : _clock = clock ?? DateTime.now,
+  }) : outbox = OutboxWriter(db, clock: clock),
        _newId = idGenerator ?? newRowId;
 
   final AppDatabase db;
-  final DateTime Function() _clock;
+
+  /// 변경 대기열에 올리는 도구. 다른 저장소도 이것을 받아 쓴다.
+  final OutboxWriter outbox;
   final String Function() _newId;
 
-  DateTime _now() => _clock().toUtc();
+  DateTime _now() => outbox.now();
 
   // ------------------------------------------------------------------ 가계부
 
@@ -516,24 +523,32 @@ class LedgerRepository {
     db.ledgerTransactions,
   )..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  Future<String> addTransaction(String ledgerId, TransactionInput input) =>
-      db.transaction(() async {
-        final now = _now();
-        final id = _newId();
-        final companion = await _companionFor(ledgerId, input, now);
-        await db
-            .into(db.ledgerTransactions)
-            .insert(
-              companion.copyWith(
-                id: Value(id),
-                ledgerId: Value(ledgerId),
-                createdAt: Value(now),
-                updatedAt: Value(now),
-              ),
-            );
-        await _enqueue(ledgerId, 'transactions', id, 'upsert', 0, now);
-        return id;
-      });
+  /// 거래를 더한다.
+  ///
+  /// [id]를 주면 그 ID로 만든다. 같은 ID의 거래가 이미 있으면(지운 것도 포함) 아무것도
+  /// 하지 않는다. 반복 거래처럼 두 기기가 같은 거래를 만들 수 있을 때 쓴다.
+  Future<String> addTransaction(
+    String ledgerId,
+    TransactionInput input, {
+    String? id,
+  }) => db.transaction(() async {
+    if (id != null && await transactionById(id) != null) return id;
+    final now = _now();
+    final txId = id ?? _newId();
+    final companion = await _companionFor(ledgerId, input, now);
+    await db
+        .into(db.ledgerTransactions)
+        .insert(
+          companion.copyWith(
+            id: Value(txId),
+            ledgerId: Value(ledgerId),
+            createdAt: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
+    await _enqueue(ledgerId, 'transactions', txId, 'upsert', 0, now);
+    return txId;
+  });
 
   Future<void> updateTransaction(String id, TransactionInput input) =>
       db.transaction(() async {
@@ -702,6 +717,7 @@ class LedgerRepository {
       canceledAt: Value(input.canceled ? now : null),
       source: Value(input.source),
       aiModel: Value(input.aiModel),
+      status: Value(input.status),
       dedupKey: Value(
         dedupKeyFor(
           input.occurredOn,
@@ -975,10 +991,6 @@ class LedgerRepository {
     )..addColumns([count])).map((row) => row.read(count) ?? 0).watchSingle();
   }
 
-  /// 변경을 대기열에 올린다. 같은 행의 변경이 이미 있으면 하나로 합친다.
-  ///
-  /// 합칠 때 [baseVersion]은 처음 것을 지킨다. 서버가 충돌을 판정하는 기준이
-  /// '기기가 마지막으로 본 서버 버전'이기 때문이다.
   Future<void> _enqueue(
     String ledgerId,
     String table,
@@ -986,69 +998,14 @@ class LedgerRepository {
     String op,
     int baseVersion,
     DateTime at,
-  ) async {
-    await db
-        .into(db.outbox)
-        .insert(
-          OutboxCompanion.insert(
-            ledgerId: ledgerId,
-            targetTable: table,
-            rowId: rowId,
-            op: op,
-            baseVersion: baseVersion,
-            clientUpdatedAt: at,
-          ),
-          onConflict: DoUpdate(
-            (old) => OutboxCompanion(op: Value(op), clientUpdatedAt: Value(at)),
-            target: [db.outbox.targetTable, db.outbox.rowId],
-          ),
-        );
-  }
+  ) => outbox.enqueue(ledgerId, table, rowId, op, baseVersion, at);
 
-  /// 삭제 표시를 하고 대기열에 올린다.
-  ///
-  /// 서버에 한 번도 올라가지 않은 행은 흔적 없이 지운다.
   Future<void> _softDelete(
     String table,
     String ledgerId,
     String rowId,
     int version,
-  ) async {
-    final now = _now();
-    final pending =
-        await (db.select(db.outbox)..where(
-              (o) => o.targetTable.equals(table) & o.rowId.equals(rowId),
-            ))
-            .getSingleOrNull();
-    final neverPushed =
-        version == 0 && (pending == null || pending.baseVersion == 0);
-    if (neverPushed) {
-      await db.customUpdate(
-        'DELETE FROM $table WHERE id = ?',
-        variables: [Variable.withString(rowId)],
-        updates: {_tableByName(table)},
-        updateKind: UpdateKind.delete,
-      );
-      await (db.delete(db.outbox)
-            ..where((o) => o.targetTable.equals(table) & o.rowId.equals(rowId)))
-          .go();
-      return;
-    }
-    await db.customUpdate(
-      'UPDATE $table SET deleted_at = ?, client_updated_at = ? WHERE id = ?',
-      variables: [
-        Variable.withString(now.toIso8601String()),
-        Variable.withString(now.toIso8601String()),
-        Variable.withString(rowId),
-      ],
-      updates: {_tableByName(table)},
-      updateKind: UpdateKind.update,
-    );
-    await _enqueue(ledgerId, table, rowId, 'delete', version, now);
-  }
-
-  TableInfo _tableByName(String name) =>
-      db.allTables.firstWhere((t) => t.actualTableName == name);
+  ) => outbox.softDelete(table, ledgerId, rowId, version);
 }
 
 String? _blankToNull(String? text) {

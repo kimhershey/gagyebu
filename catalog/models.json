@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "qwen3.5-2b-q4_k_m",
+      "kind": "text",
+      "name": "Qwen3.5-2B",
+      "license": "Apache-2.0",
+      "url": null,
+      "size_bytes": null,
+      "sha256": null,
+      "min_memory_gb": 6,
+      "platforms": ["android", "windows"],
+      "mmproj": "qwen3.5-2b-mmproj"
+    },
+    {
+      "id": "qwen3.5-2b-mmproj",
+      "kind": "mmproj",
+      "name": "Qwen3.5-2B 이미지 입력(mmproj)",
+      "license": "Apache-2.0",
+      "url": null,
+      "size_bytes": null,
+      "sha256": null,
+      "min_memory_gb": 8,
+      "platforms": ["windows"],
+      "mmproj": null
+    },
+    {
+      "id": "qwen3.5-4b-q4_k_m",
+      "kind": "vision",
+      "name": "Qwen3.5-4B",
+      "license": "Apache-2.0",
+      "url": null,
+      "size_bytes": null,
+      "sha256": null,
+      "min_memory_gb": 16,
+      "platforms": ["windows"],
+      "mmproj": "qwen3.5-4b-mmproj"
+    },
+    {
+      "id": "qwen3.5-4b-mmproj",
+      "kind": "mmproj",
+      "name": "Qwen3.5-4B 이미지 입력(mmproj)",
+      "license": "Apache-2.0",
+      "url": null,
+      "size_bytes": null,
+      "sha256": null,
+      "min_memory_gb": 16,
+      "platforms": ["windows"],
+      "mmproj": null
+    }
+  ]
+}

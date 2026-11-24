@@ -174,7 +174,7 @@ sync_pull(p_ledger_id uuid, p_since bigint, p_limit integer default 500) returns
 - 대시보드나 서비스 키로 테이블을 직접 고치면 `server_seq`가 오르지 않아 기기로 전파되지 않는다. 쓰기는 `sync_push()`로만 한다.
 - 백업에서 복원하면 `server_seq`가 기기의 커서보다 작아질 수 있다. 복원한 뒤에는 기기에서 전체를 다시 받아야 한다.
 - 트리거를 설치하기 전에 가입한 사용자에게는 가계부가 만들어지지 않는다.
-- `purge_tombstones()`를 주기적으로 부르는 예약은 아직 없다.
+- `purge_tombstones()`는 백업 작업이 주 1회 부른다(아래 "백업과 복원"). 저장소 비밀값을 넣지 않았으면 돌지 않는다.
 
 ## 프로젝트를 만들어 앱에 연결하기
 
@@ -184,10 +184,91 @@ sync_pull(p_ledger_id uuid, p_since bigint, p_limit integer default 500) returns
    - Google Cloud Console에서 OAuth 클라이언트(웹 애플리케이션)를 만든다. 승인된 리디렉션 URI에 `https://<프로젝트>.supabase.co/auth/v1/callback`을 넣는다.
    - Supabase 대시보드의 Authentication → Providers → Google에 클라이언트 ID와 비밀값을 넣는다.
    - Authentication → URL Configuration의 Redirect URLs에 웹 앱 주소(예: `https://kimhershey.github.io/gagyebu/`)를 넣는다. 로컬에서 시험하려면 `http://localhost:*`도 넣는다.
+   - 같은 Redirect URLs에 `io.github.kimhershey.gagyebu://login-callback`도 넣는다. Android · Windows 앱은 기기의 브라우저에서 Google 로그인을 마치고 이 주소로 앱에 돌아온다. 빠지면 앱이 아니라 웹 앱 주소(Site URL)로 돌아간다.
 4. 이메일 로그인은 처음부터 켜져 있다(Authentication → Providers → Email). Confirm email을 켜 두면 가입한 뒤 메일의 링크를 눌러야 로그인되고, 끄면 가입하자마자 로그인된다. 지금 프로젝트는 꺼 두었다. Supabase가 기본으로 주는 메일 발송은 시험용이라 보낼 수 있는 주소와 횟수에 제한이 있다. 확인 메일이나 비밀번호를 다시 정하는 메일을 여러 사람에게 보내려면 메일 서버(SMTP)를 연결한다.
 5. Project URL과 publishable 키를 앱 빌드에 넣는다(저장소 `README.md`의 "개발"). 이 두 값은 공개해도 된다. service_role 키와 DB 비밀번호는 어디에도 넣지 않는다.
 
 앱은 로그인하면 `profiles`에서 제 가계부를 찾고(`id = auth.uid()`), `sync_push` · `sync_pull`만 부른다. 처음 로그인한 기기는 그동안 기기에 적어 둔 거래 · 자산 · 분류를 계정의 가계부로 옮긴다. 이름과 종류가 같은 기본 분류 · 자산은 서버 것을 쓰고, 나머지는 새 행으로 올린다(`app/lib/data/sync/ledger_adoption.dart`).
+
+## 백업과 복원
+
+`.github/workflows/backup.yml`이 매일 한 번(한국 시각 새벽 3시쯤) `public` 스키마를 `pg_dump`로 덤프하고, `gpg --symmetric`(AES256)으로 암호화해 Actions 산출물로 30일 보관한다. 일요일(UTC)의 실행, 곧 한국 시각 월요일 새벽의 실행은 백업을 마친 뒤 `purge_tombstones()`를 불러 90일 지난 삭제 표시를 지운다. 백업이 실패한 날에는 지우지 않는다.
+
+### 켜기
+
+저장소 Settings → Secrets and variables → Actions에 비밀값 둘을 넣는다. **둘 다 있어야 돈다.** 하나라도 없으면 작업은 "비밀값이 없어 건너뜁니다"라고 남기고 성공으로 끝난다.
+
+| 비밀값 | 내용 |
+| --- | --- |
+| `SUPABASE_DB_URL` | DB 접속 주소. Supabase 대시보드의 Connect에서 **Session pooler** 주소를 복사하고 `[YOUR-PASSWORD]` 자리에 DB 비밀번호를 넣는다(`postgresql://postgres.<프로젝트>:<비밀번호>@<리전>.pooler.supabase.com:5432/postgres` 꼴). 비밀번호에 `@` · `/` · `:` 같은 글자가 있으면 URL 인코딩한다 |
+| `BACKUP_PASSPHRASE` | 덤프를 잠그는 암호. 한 줄짜리 길고 무작위인 값을 쓴다(예: `openssl rand -base64 32`의 결과) |
+
+- Direct connection 주소는 IPv4 추가 기능을 켜지 않았으면 IPv6로만 열리는데, GitHub의 러너는 IPv6로 나가지 못한다. Transaction pooler(포트 6543)는 `pg_dump`에 맞지 않는다. 그래서 Session pooler(포트 5432)를 쓴다.
+- `SUPABASE_DB_URL`에는 DB 비밀번호가 들어 있다. 저장소의 파일, 이슈, 로그 어디에도 적지 않는다.
+- `BACKUP_PASSPHRASE`는 저장소 밖(비밀번호 관리자)에도 적어 둔다. GitHub는 넣은 비밀값을 다시 보여 주지 않고, 이 값을 잃으면 백업을 풀 수 없다. 값을 바꾸면 그 전의 백업은 그 전의 값으로만 풀린다.
+- 넣은 뒤 Actions → "서버 백업" → Run workflow로 한 번 돌려, 실행 결과의 Artifacts에 `gagyebu-db-backup-<시각>`이 생기는지 본다. Run workflow의 체크 상자를 켜면 삭제 표시 정리도 함께 돈다.
+
+### 알아 둘 것
+
+- **공개 저장소의 산출물은 GitHub에 로그인한 사람이면 누구나 내려받을 수 있다.** 올라가는 것은 암호화된 파일뿐이지만, 그래서 암호가 짧거나 짐작할 수 있는 값이면 안 된다.
+- 덤프에는 `public` 스키마만 들어 있다: 표 10개의 행, 함수, 정책, `server_seq`의 값. **계정(`auth` 스키마의 이메일과 비밀번호 해시)은 들어 있지 않다.** 같은 프로젝트에서 가계부 데이터를 백업 시점으로 되돌리는 용도다. 프로젝트가 통째로 없어지면 이 백업만으로는 계정을 되살릴 수 없고, 가계부의 행도 주인(`auth.users`의 행)이 없어 그대로는 들어가지 않는다.
+- 30일이 지난 산출물은 GitHub가 지운다. 더 오래 둘 백업은 내려받아 따로 보관한다.
+- 예약 실행은 기본 브랜치(`main`)의 파일로만 돈다. 공개 저장소에 60일 동안 활동이 없으면 GitHub가 예약 실행을 끈다. Actions 탭에서 다시 켠다. 예약한 시각보다 늦게 돌 수도 있다.
+- 작업은 서버의 PostgreSQL 판을 물어보고 같은 판의 `pg_dump`를 받아 쓴다.
+- 덤프와 아래 복원 절차는 로컬 PostgreSQL 16(시험용 스텁)에서 왕복해 보았다. 실제 Supabase 프로젝트에서 돌려 보지는 못했다.
+
+### 복원
+
+같은 Supabase 프로젝트에 되돌리는 절차다. 표의 구조(스키마)는 건드리지 않고 **행만** 백업 시점으로 바꾼다. 구조는 `migrations/`가 원본이다. PostgreSQL 클라이언트(`pg_restore`, `psql`. 서버와 같은 판이거나 더 높은 판)와 `gpg`가 있는 PC의 bash에서 한다. `$DB_URL`은 `SUPABASE_DB_URL`에 넣은 것과 같은 주소다.
+
+1. 내려받는다. Actions → "서버 백업" → 되돌릴 날의 실행 → Artifacts의 `gagyebu-db-backup-<시각>`(zip). 풀면 `gagyebu-public-<시각>.dump.gpg`가 나온다.
+2. 암호를 푼다. `BACKUP_PASSPHRASE`를 묻는다.
+
+   ```bash
+   gpg --output gagyebu.dump --decrypt gagyebu-public-<시각>.dump.gpg
+   pg_restore --list gagyebu.dump | grep "TABLE DATA"     # 표 10개가 보여야 한다
+   ```
+
+3. 지금 상태를 따로 떠 둔다. 복원이 잘못됐을 때 돌아갈 길이고, 백업 뒤에 생긴 변경이 여기에만 남는다.
+
+   ```bash
+   pg_dump "$DB_URL" --schema=public --format=custom --no-owner --file=before-restore.dump
+   ```
+
+4. 덤프에서 행만 SQL로 꺼낸다. 표의 순서는 서로 가리키는 순서(가계부 → 자산 · 분류 → 거래 …)여야 한다.
+
+   ```bash
+   for t in ledgers profiles accounts categories transactions budgets recurring_rules \
+            category_rules monthly_summaries sync_batches server_seq; do
+     pg_restore --data-only --no-owner --table="$t" --file=- gagyebu.dump
+   done > data.sql
+   ```
+
+5. 한 트랜잭션에서 표를 비우고 넣는다. 중간에 실패하면 아무것도 바뀌지 않는다. 사람들이 앱을 쓰지 않는 시간에 한다.
+
+   ```bash
+   seq_before=$(psql "$DB_URL" -X -At -c "select last_value from public.server_seq")
+   psql "$DB_URL" -X -v ON_ERROR_STOP=1 --single-transaction \
+     -c "truncate table public.sync_batches, public.monthly_summaries, public.category_rules, public.recurring_rules, public.budgets, public.transactions, public.categories, public.accounts, public.profiles, public.ledgers" \
+     -f data.sql \
+     -c "select setval('public.server_seq', greatest(last_value, $seq_before)) from public.server_seq"
+   ```
+
+   마지막 줄은 `server_seq`가 복원 전보다 뒤로 가지 않게 한다. 뒤로 가면 기기의 커서보다 작은 번호가 새 변경에 붙어, 그 변경을 기기가 받지 못한다.
+
+6. 확인한다. 행 수가 기대와 맞는지 본다.
+
+   ```bash
+   psql "$DB_URL" -X -c "select (select count(*) from public.ledgers) as ledgers, (select count(*) from public.transactions) as transactions"
+   ```
+
+7. 풀어 둔 `gagyebu.dump`, `data.sql`, `before-restore.dump`는 암호화되지 않은 가계부 데이터다. 일이 끝나면 지운다.
+
+복원한 뒤에 남는 일:
+
+- **기기들이 전체를 다시 받아야 한다.** 서버의 행은 백업 시점으로 돌아갔는데 기기는 그 뒤의 변경을 이미 받았거나 올린 상태라 서로 어긋난다("알려진 한계"). 앱에는 아직 "전체 다시 받기" 단추가 없으므로, 기기마다 앱에 저장된 데이터를 지우고 다시 로그인한다. 웹은 브라우저 설정에서 이 사이트의 데이터를 지운다. Android는 앱 정보 → 저장공간 → 데이터 삭제. Windows는 앱을 끄고 `gagyebu.sqlite`(보통 `%APPDATA%\io.github.kimhershey\gagyebu` 아래)를 지운다. 지우기 전에 아직 올리지 못한 변경은 함께 사라진다.
+- 백업 뒤에 **가입한** 계정은 인증 계정만 남고 가계부가 없는 상태가 된다. 대시보드(Authentication → Users)에서 그 계정을 지우고 다시 가입하게 한다.
+- 백업 뒤에 **탈퇴한** 계정이 있으면 5번이 외래 키 오류(`ledgers_owner_id_fkey`)로 멈춘다(아무것도 바뀌지 않는다). 탈퇴한 사람의 행은 되살리지 않아야 하므로 `data.sql`에서 그 가계부의 행을 빼야 하는데, 이 경우를 대신 해 주는 절차는 아직 없다.
 
 ## 실제 Supabase에서 확인할 것
 

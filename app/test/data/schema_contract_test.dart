@@ -78,7 +78,14 @@ void main() {
   test('기기 테이블의 컬럼이 동기화 목록과 같다', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    const localOnly = {'outbox', 'sync_state', 'sync_conflicts'};
+    const localOnly = {
+      'outbox',
+      'sync_state',
+      'sync_conflicts',
+      'input_batches',
+      'input_batch_items',
+      'model_files',
+    };
     final local = {
       for (final t in db.allTables)
         t.actualTableName: {for (final c in t.$columns) c.name},

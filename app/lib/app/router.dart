@@ -2,15 +2,27 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../features/accounts/accounts_screen.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/auth/password_screens.dart';
 import '../features/auth/welcome_screen.dart';
+import '../features/budget/budget_screen.dart';
+import '../features/categories/categories_screen.dart';
+import '../features/history/history_screen.dart';
 import '../features/home/home_screen.dart';
-import '../features/input/input_panel.dart';
+import '../features/image_input/image_input_screen.dart';
+import '../features/lock/lock_screen.dart';
+import '../features/models/models_screen.dart';
+import '../features/query/query_screen.dart';
+import '../features/recurring/recurring_screen.dart';
+import '../features/review/review_panel.dart';
+import '../features/settings/account_screen.dart';
+import '../features/settings/conflicts_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../features/stats/stats_screen.dart';
 import '../features/transactions/transactions_screen.dart';
+import '../features/transfer/data_screen.dart';
 
 /// 화면과 주소의 대응.
 ///
@@ -74,10 +86,64 @@ GoRouter createRouter({
             GoRoute(
               path: '/settings',
               builder: (context, state) => const SettingsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'account',
+                  builder: (context, state) => const AccountSettingsScreen(),
+                ),
+                GoRoute(
+                  path: 'data',
+                  builder: (context, state) => const DataScreen(),
+                ),
+                GoRoute(
+                  path: 'lock',
+                  builder: (context, state) => const LockSettingsScreen(),
+                ),
+                GoRoute(
+                  path: 'models',
+                  builder: (context, state) => const ModelsScreen(),
+                ),
+                GoRoute(
+                  path: 'conflicts',
+                  builder: (context, state) => const ConflictsScreen(),
+                ),
+              ],
+            ),
+            // 탭이 아닌 화면은 설정 탭에 속한다.
+            GoRoute(
+              path: '/accounts',
+              builder: (context, state) => const AccountsScreen(),
+            ),
+            GoRoute(
+              path: '/categories',
+              builder: (context, state) => const CategoriesScreen(),
+            ),
+            GoRoute(
+              path: '/budget',
+              builder: (context, state) => const BudgetScreen(),
+            ),
+            GoRoute(
+              path: '/recurring',
+              builder: (context, state) => const RecurringScreen(),
+            ),
+            GoRoute(
+              path: '/history',
+              builder: (context, state) => const HistoryScreen(),
             ),
           ],
         ),
       ],
+    ),
+    GoRoute(path: '/review', builder: (context, state) => const ReviewScreen()),
+    GoRoute(
+      path: '/query',
+      builder: (context, state) => Scaffold(
+        body: QueryScreen(question: state.uri.queryParameters['q'] ?? ''),
+      ),
+    ),
+    GoRoute(
+      path: '/image-input',
+      builder: (context, state) => const Scaffold(body: ImageInputScreen()),
     ),
     GoRoute(
       path: '/welcome',
@@ -100,12 +166,6 @@ GoRouter createRouter({
     GoRoute(
       path: '/new-password',
       builder: (context, state) => const NewPasswordScreen(),
-    ),
-    GoRoute(
-      path: '/input',
-      builder: (context, state) => Scaffold(
-        body: SafeArea(child: InputPanel(onClose: () => context.pop())),
-      ),
     ),
   ],
 );

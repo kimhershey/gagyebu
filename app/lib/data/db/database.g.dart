@@ -8778,6 +8778,1302 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflictRow> {
   }
 }
 
+class $InputBatchesTable extends InputBatches
+    with TableInfo<$InputBatchesTable, InputBatchRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InputBatchesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ledgerIdMeta = const VerificationMeta(
+    'ledgerId',
+  );
+  @override
+  late final GeneratedColumn<String> ledgerId = GeneratedColumn<String>(
+    'ledger_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DateTime, String> createdAt =
+      GeneratedColumn<String>(
+        'created_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DateTime>($InputBatchesTable.$convertercreatedAt);
+  @override
+  late final GeneratedColumnWithTypeConverter<TxSource, String> source =
+      GeneratedColumn<String>(
+        'source',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<TxSource>($InputBatchesTable.$convertersource);
+  static const VerificationMeta _itemCountMeta = const VerificationMeta(
+    'itemCount',
+  );
+  @override
+  late final GeneratedColumn<int> itemCount = GeneratedColumn<int>(
+    'item_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DateTime?, String> undoneAt =
+      GeneratedColumn<String>(
+        'undone_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<DateTime?>($InputBatchesTable.$converterundoneAtn);
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ledgerId,
+    createdAt,
+    source,
+    itemCount,
+    undoneAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'input_batches';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<InputBatchRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('ledger_id')) {
+      context.handle(
+        _ledgerIdMeta,
+        ledgerId.isAcceptableOrUnknown(data['ledger_id']!, _ledgerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ledgerIdMeta);
+    }
+    if (data.containsKey('item_count')) {
+      context.handle(
+        _itemCountMeta,
+        itemCount.isAcceptableOrUnknown(data['item_count']!, _itemCountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemCountMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  InputBatchRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InputBatchRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ledgerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ledger_id'],
+      )!,
+      createdAt: $InputBatchesTable.$convertercreatedAt.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}created_at'],
+        )!,
+      ),
+      source: $InputBatchesTable.$convertersource.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}source'],
+        )!,
+      ),
+      itemCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}item_count'],
+      )!,
+      undoneAt: $InputBatchesTable.$converterundoneAtn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}undone_at'],
+        ),
+      ),
+    );
+  }
+
+  @override
+  $InputBatchesTable createAlias(String alias) {
+    return $InputBatchesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<DateTime, String> $convertercreatedAt =
+      const UtcDateTimeConverter();
+  static TypeConverter<TxSource, String> $convertersource =
+      const TxSourceConverter();
+  static TypeConverter<DateTime, String> $converterundoneAt =
+      const UtcDateTimeConverter();
+  static TypeConverter<DateTime?, String?> $converterundoneAtn =
+      NullAwareTypeConverter.wrap($converterundoneAt);
+}
+
+class InputBatchRow extends DataClass implements Insertable<InputBatchRow> {
+  final String id;
+  final String ledgerId;
+  final DateTime createdAt;
+
+  /// 어떤 경로로 들어왔는지.
+  final TxSource source;
+  final int itemCount;
+
+  /// 되돌린 때. null이면 되돌리지 않았다.
+  final DateTime? undoneAt;
+  const InputBatchRow({
+    required this.id,
+    required this.ledgerId,
+    required this.createdAt,
+    required this.source,
+    required this.itemCount,
+    this.undoneAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['ledger_id'] = Variable<String>(ledgerId);
+    {
+      map['created_at'] = Variable<String>(
+        $InputBatchesTable.$convertercreatedAt.toSql(createdAt),
+      );
+    }
+    {
+      map['source'] = Variable<String>(
+        $InputBatchesTable.$convertersource.toSql(source),
+      );
+    }
+    map['item_count'] = Variable<int>(itemCount);
+    if (!nullToAbsent || undoneAt != null) {
+      map['undone_at'] = Variable<String>(
+        $InputBatchesTable.$converterundoneAtn.toSql(undoneAt),
+      );
+    }
+    return map;
+  }
+
+  InputBatchesCompanion toCompanion(bool nullToAbsent) {
+    return InputBatchesCompanion(
+      id: Value(id),
+      ledgerId: Value(ledgerId),
+      createdAt: Value(createdAt),
+      source: Value(source),
+      itemCount: Value(itemCount),
+      undoneAt: undoneAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(undoneAt),
+    );
+  }
+
+  factory InputBatchRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InputBatchRow(
+      id: serializer.fromJson<String>(json['id']),
+      ledgerId: serializer.fromJson<String>(json['ledgerId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      source: serializer.fromJson<TxSource>(json['source']),
+      itemCount: serializer.fromJson<int>(json['itemCount']),
+      undoneAt: serializer.fromJson<DateTime?>(json['undoneAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ledgerId': serializer.toJson<String>(ledgerId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'source': serializer.toJson<TxSource>(source),
+      'itemCount': serializer.toJson<int>(itemCount),
+      'undoneAt': serializer.toJson<DateTime?>(undoneAt),
+    };
+  }
+
+  InputBatchRow copyWith({
+    String? id,
+    String? ledgerId,
+    DateTime? createdAt,
+    TxSource? source,
+    int? itemCount,
+    Value<DateTime?> undoneAt = const Value.absent(),
+  }) => InputBatchRow(
+    id: id ?? this.id,
+    ledgerId: ledgerId ?? this.ledgerId,
+    createdAt: createdAt ?? this.createdAt,
+    source: source ?? this.source,
+    itemCount: itemCount ?? this.itemCount,
+    undoneAt: undoneAt.present ? undoneAt.value : this.undoneAt,
+  );
+  InputBatchRow copyWithCompanion(InputBatchesCompanion data) {
+    return InputBatchRow(
+      id: data.id.present ? data.id.value : this.id,
+      ledgerId: data.ledgerId.present ? data.ledgerId.value : this.ledgerId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      source: data.source.present ? data.source.value : this.source,
+      itemCount: data.itemCount.present ? data.itemCount.value : this.itemCount,
+      undoneAt: data.undoneAt.present ? data.undoneAt.value : this.undoneAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InputBatchRow(')
+          ..write('id: $id, ')
+          ..write('ledgerId: $ledgerId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('source: $source, ')
+          ..write('itemCount: $itemCount, ')
+          ..write('undoneAt: $undoneAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, ledgerId, createdAt, source, itemCount, undoneAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InputBatchRow &&
+          other.id == this.id &&
+          other.ledgerId == this.ledgerId &&
+          other.createdAt == this.createdAt &&
+          other.source == this.source &&
+          other.itemCount == this.itemCount &&
+          other.undoneAt == this.undoneAt);
+}
+
+class InputBatchesCompanion extends UpdateCompanion<InputBatchRow> {
+  final Value<String> id;
+  final Value<String> ledgerId;
+  final Value<DateTime> createdAt;
+  final Value<TxSource> source;
+  final Value<int> itemCount;
+  final Value<DateTime?> undoneAt;
+  final Value<int> rowid;
+  const InputBatchesCompanion({
+    this.id = const Value.absent(),
+    this.ledgerId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.source = const Value.absent(),
+    this.itemCount = const Value.absent(),
+    this.undoneAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InputBatchesCompanion.insert({
+    required String id,
+    required String ledgerId,
+    required DateTime createdAt,
+    required TxSource source,
+    required int itemCount,
+    this.undoneAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ledgerId = Value(ledgerId),
+       createdAt = Value(createdAt),
+       source = Value(source),
+       itemCount = Value(itemCount);
+  static Insertable<InputBatchRow> custom({
+    Expression<String>? id,
+    Expression<String>? ledgerId,
+    Expression<String>? createdAt,
+    Expression<String>? source,
+    Expression<int>? itemCount,
+    Expression<String>? undoneAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ledgerId != null) 'ledger_id': ledgerId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (source != null) 'source': source,
+      if (itemCount != null) 'item_count': itemCount,
+      if (undoneAt != null) 'undone_at': undoneAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InputBatchesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ledgerId,
+    Value<DateTime>? createdAt,
+    Value<TxSource>? source,
+    Value<int>? itemCount,
+    Value<DateTime?>? undoneAt,
+    Value<int>? rowid,
+  }) {
+    return InputBatchesCompanion(
+      id: id ?? this.id,
+      ledgerId: ledgerId ?? this.ledgerId,
+      createdAt: createdAt ?? this.createdAt,
+      source: source ?? this.source,
+      itemCount: itemCount ?? this.itemCount,
+      undoneAt: undoneAt ?? this.undoneAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ledgerId.present) {
+      map['ledger_id'] = Variable<String>(ledgerId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<String>(
+        $InputBatchesTable.$convertercreatedAt.toSql(createdAt.value),
+      );
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(
+        $InputBatchesTable.$convertersource.toSql(source.value),
+      );
+    }
+    if (itemCount.present) {
+      map['item_count'] = Variable<int>(itemCount.value);
+    }
+    if (undoneAt.present) {
+      map['undone_at'] = Variable<String>(
+        $InputBatchesTable.$converterundoneAtn.toSql(undoneAt.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InputBatchesCompanion(')
+          ..write('id: $id, ')
+          ..write('ledgerId: $ledgerId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('source: $source, ')
+          ..write('itemCount: $itemCount, ')
+          ..write('undoneAt: $undoneAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $InputBatchItemsTable extends InputBatchItems
+    with TableInfo<$InputBatchItemsTable, InputBatchItemRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InputBatchItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _batchIdMeta = const VerificationMeta(
+    'batchId',
+  );
+  @override
+  late final GeneratedColumn<String> batchId = GeneratedColumn<String>(
+    'batch_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _txIdMeta = const VerificationMeta('txId');
+  @override
+  late final GeneratedColumn<String> txId = GeneratedColumn<String>(
+    'tx_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DateTime, String> stamp =
+      GeneratedColumn<String>(
+        'stamp',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DateTime>($InputBatchItemsTable.$converterstamp);
+  @override
+  List<GeneratedColumn> get $columns => [batchId, txId, kind, stamp];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'input_batch_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<InputBatchItemRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('batch_id')) {
+      context.handle(
+        _batchIdMeta,
+        batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_batchIdMeta);
+    }
+    if (data.containsKey('tx_id')) {
+      context.handle(
+        _txIdMeta,
+        txId.isAcceptableOrUnknown(data['tx_id']!, _txIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_txIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {batchId, txId};
+  @override
+  InputBatchItemRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InputBatchItemRow(
+      batchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}batch_id'],
+      )!,
+      txId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tx_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      stamp: $InputBatchItemsTable.$converterstamp.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}stamp'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $InputBatchItemsTable createAlias(String alias) {
+    return $InputBatchItemsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<DateTime, String> $converterstamp =
+      const UtcDateTimeConverter();
+}
+
+class InputBatchItemRow extends DataClass
+    implements Insertable<InputBatchItemRow> {
+  final String batchId;
+  final String txId;
+
+  /// created: 묶음이 만든 거래. canceled: 묶음이 취소 처리한 원 거래.
+  final String kind;
+
+  /// 저장했을 때 그 거래의 client_updated_at. 그 뒤에 고쳤는지 가리는 데 쓴다.
+  final DateTime stamp;
+  const InputBatchItemRow({
+    required this.batchId,
+    required this.txId,
+    required this.kind,
+    required this.stamp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['batch_id'] = Variable<String>(batchId);
+    map['tx_id'] = Variable<String>(txId);
+    map['kind'] = Variable<String>(kind);
+    {
+      map['stamp'] = Variable<String>(
+        $InputBatchItemsTable.$converterstamp.toSql(stamp),
+      );
+    }
+    return map;
+  }
+
+  InputBatchItemsCompanion toCompanion(bool nullToAbsent) {
+    return InputBatchItemsCompanion(
+      batchId: Value(batchId),
+      txId: Value(txId),
+      kind: Value(kind),
+      stamp: Value(stamp),
+    );
+  }
+
+  factory InputBatchItemRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InputBatchItemRow(
+      batchId: serializer.fromJson<String>(json['batchId']),
+      txId: serializer.fromJson<String>(json['txId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      stamp: serializer.fromJson<DateTime>(json['stamp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'batchId': serializer.toJson<String>(batchId),
+      'txId': serializer.toJson<String>(txId),
+      'kind': serializer.toJson<String>(kind),
+      'stamp': serializer.toJson<DateTime>(stamp),
+    };
+  }
+
+  InputBatchItemRow copyWith({
+    String? batchId,
+    String? txId,
+    String? kind,
+    DateTime? stamp,
+  }) => InputBatchItemRow(
+    batchId: batchId ?? this.batchId,
+    txId: txId ?? this.txId,
+    kind: kind ?? this.kind,
+    stamp: stamp ?? this.stamp,
+  );
+  InputBatchItemRow copyWithCompanion(InputBatchItemsCompanion data) {
+    return InputBatchItemRow(
+      batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      txId: data.txId.present ? data.txId.value : this.txId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      stamp: data.stamp.present ? data.stamp.value : this.stamp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InputBatchItemRow(')
+          ..write('batchId: $batchId, ')
+          ..write('txId: $txId, ')
+          ..write('kind: $kind, ')
+          ..write('stamp: $stamp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(batchId, txId, kind, stamp);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InputBatchItemRow &&
+          other.batchId == this.batchId &&
+          other.txId == this.txId &&
+          other.kind == this.kind &&
+          other.stamp == this.stamp);
+}
+
+class InputBatchItemsCompanion extends UpdateCompanion<InputBatchItemRow> {
+  final Value<String> batchId;
+  final Value<String> txId;
+  final Value<String> kind;
+  final Value<DateTime> stamp;
+  final Value<int> rowid;
+  const InputBatchItemsCompanion({
+    this.batchId = const Value.absent(),
+    this.txId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.stamp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InputBatchItemsCompanion.insert({
+    required String batchId,
+    required String txId,
+    required String kind,
+    required DateTime stamp,
+    this.rowid = const Value.absent(),
+  }) : batchId = Value(batchId),
+       txId = Value(txId),
+       kind = Value(kind),
+       stamp = Value(stamp);
+  static Insertable<InputBatchItemRow> custom({
+    Expression<String>? batchId,
+    Expression<String>? txId,
+    Expression<String>? kind,
+    Expression<String>? stamp,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (batchId != null) 'batch_id': batchId,
+      if (txId != null) 'tx_id': txId,
+      if (kind != null) 'kind': kind,
+      if (stamp != null) 'stamp': stamp,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InputBatchItemsCompanion copyWith({
+    Value<String>? batchId,
+    Value<String>? txId,
+    Value<String>? kind,
+    Value<DateTime>? stamp,
+    Value<int>? rowid,
+  }) {
+    return InputBatchItemsCompanion(
+      batchId: batchId ?? this.batchId,
+      txId: txId ?? this.txId,
+      kind: kind ?? this.kind,
+      stamp: stamp ?? this.stamp,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (batchId.present) {
+      map['batch_id'] = Variable<String>(batchId.value);
+    }
+    if (txId.present) {
+      map['tx_id'] = Variable<String>(txId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (stamp.present) {
+      map['stamp'] = Variable<String>(
+        $InputBatchItemsTable.$converterstamp.toSql(stamp.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InputBatchItemsCompanion(')
+          ..write('batchId: $batchId, ')
+          ..write('txId: $txId, ')
+          ..write('kind: $kind, ')
+          ..write('stamp: $stamp, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ModelFilesTable extends ModelFiles
+    with TableInfo<$ModelFilesTable, ModelFileRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ModelFilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pathMeta = const VerificationMeta('path');
+  @override
+  late final GeneratedColumn<String> path = GeneratedColumn<String>(
+    'path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sizeBytesMeta = const VerificationMeta(
+    'sizeBytes',
+  );
+  @override
+  late final GeneratedColumn<int> sizeBytes = GeneratedColumn<int>(
+    'size_bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _downloadedBytesMeta = const VerificationMeta(
+    'downloadedBytes',
+  );
+  @override
+  late final GeneratedColumn<int> downloadedBytes = GeneratedColumn<int>(
+    'downloaded_bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _sha256Meta = const VerificationMeta('sha256');
+  @override
+  late final GeneratedColumn<String> sha256 = GeneratedColumn<String>(
+    'sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DateTime, String> updatedAt =
+      GeneratedColumn<String>(
+        'updated_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DateTime>($ModelFilesTable.$converterupdatedAt);
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    fileName,
+    path,
+    sizeBytes,
+    downloadedBytes,
+    sha256,
+    status,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'model_files';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ModelFileRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fileNameMeta);
+    }
+    if (data.containsKey('path')) {
+      context.handle(
+        _pathMeta,
+        path.isAcceptableOrUnknown(data['path']!, _pathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pathMeta);
+    }
+    if (data.containsKey('size_bytes')) {
+      context.handle(
+        _sizeBytesMeta,
+        sizeBytes.isAcceptableOrUnknown(data['size_bytes']!, _sizeBytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sizeBytesMeta);
+    }
+    if (data.containsKey('downloaded_bytes')) {
+      context.handle(
+        _downloadedBytesMeta,
+        downloadedBytes.isAcceptableOrUnknown(
+          data['downloaded_bytes']!,
+          _downloadedBytesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sha256')) {
+      context.handle(
+        _sha256Meta,
+        sha256.isAcceptableOrUnknown(data['sha256']!, _sha256Meta),
+      );
+    } else if (isInserting) {
+      context.missing(_sha256Meta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ModelFileRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ModelFileRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      )!,
+      path: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}path'],
+      )!,
+      sizeBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}size_bytes'],
+      )!,
+      downloadedBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}downloaded_bytes'],
+      )!,
+      sha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sha256'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      updatedAt: $ModelFilesTable.$converterupdatedAt.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}updated_at'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $ModelFilesTable createAlias(String alias) {
+    return $ModelFilesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<DateTime, String> $converterupdatedAt =
+      const UtcDateTimeConverter();
+}
+
+class ModelFileRow extends DataClass implements Insertable<ModelFileRow> {
+  /// 카탈로그의 ID.
+  final String id;
+
+  /// text · vision · mmproj
+  final String kind;
+  final String fileName;
+  final String path;
+  final int sizeBytes;
+  final int downloadedBytes;
+  final String sha256;
+
+  /// downloading · ready · failed
+  final String status;
+  final DateTime updatedAt;
+  const ModelFileRow({
+    required this.id,
+    required this.kind,
+    required this.fileName,
+    required this.path,
+    required this.sizeBytes,
+    required this.downloadedBytes,
+    required this.sha256,
+    required this.status,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['kind'] = Variable<String>(kind);
+    map['file_name'] = Variable<String>(fileName);
+    map['path'] = Variable<String>(path);
+    map['size_bytes'] = Variable<int>(sizeBytes);
+    map['downloaded_bytes'] = Variable<int>(downloadedBytes);
+    map['sha256'] = Variable<String>(sha256);
+    map['status'] = Variable<String>(status);
+    {
+      map['updated_at'] = Variable<String>(
+        $ModelFilesTable.$converterupdatedAt.toSql(updatedAt),
+      );
+    }
+    return map;
+  }
+
+  ModelFilesCompanion toCompanion(bool nullToAbsent) {
+    return ModelFilesCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      fileName: Value(fileName),
+      path: Value(path),
+      sizeBytes: Value(sizeBytes),
+      downloadedBytes: Value(downloadedBytes),
+      sha256: Value(sha256),
+      status: Value(status),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ModelFileRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ModelFileRow(
+      id: serializer.fromJson<String>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      fileName: serializer.fromJson<String>(json['fileName']),
+      path: serializer.fromJson<String>(json['path']),
+      sizeBytes: serializer.fromJson<int>(json['sizeBytes']),
+      downloadedBytes: serializer.fromJson<int>(json['downloadedBytes']),
+      sha256: serializer.fromJson<String>(json['sha256']),
+      status: serializer.fromJson<String>(json['status']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'kind': serializer.toJson<String>(kind),
+      'fileName': serializer.toJson<String>(fileName),
+      'path': serializer.toJson<String>(path),
+      'sizeBytes': serializer.toJson<int>(sizeBytes),
+      'downloadedBytes': serializer.toJson<int>(downloadedBytes),
+      'sha256': serializer.toJson<String>(sha256),
+      'status': serializer.toJson<String>(status),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ModelFileRow copyWith({
+    String? id,
+    String? kind,
+    String? fileName,
+    String? path,
+    int? sizeBytes,
+    int? downloadedBytes,
+    String? sha256,
+    String? status,
+    DateTime? updatedAt,
+  }) => ModelFileRow(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    fileName: fileName ?? this.fileName,
+    path: path ?? this.path,
+    sizeBytes: sizeBytes ?? this.sizeBytes,
+    downloadedBytes: downloadedBytes ?? this.downloadedBytes,
+    sha256: sha256 ?? this.sha256,
+    status: status ?? this.status,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ModelFileRow copyWithCompanion(ModelFilesCompanion data) {
+    return ModelFileRow(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      path: data.path.present ? data.path.value : this.path,
+      sizeBytes: data.sizeBytes.present ? data.sizeBytes.value : this.sizeBytes,
+      downloadedBytes: data.downloadedBytes.present
+          ? data.downloadedBytes.value
+          : this.downloadedBytes,
+      sha256: data.sha256.present ? data.sha256.value : this.sha256,
+      status: data.status.present ? data.status.value : this.status,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ModelFileRow(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('fileName: $fileName, ')
+          ..write('path: $path, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('downloadedBytes: $downloadedBytes, ')
+          ..write('sha256: $sha256, ')
+          ..write('status: $status, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    fileName,
+    path,
+    sizeBytes,
+    downloadedBytes,
+    sha256,
+    status,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ModelFileRow &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.fileName == this.fileName &&
+          other.path == this.path &&
+          other.sizeBytes == this.sizeBytes &&
+          other.downloadedBytes == this.downloadedBytes &&
+          other.sha256 == this.sha256 &&
+          other.status == this.status &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ModelFilesCompanion extends UpdateCompanion<ModelFileRow> {
+  final Value<String> id;
+  final Value<String> kind;
+  final Value<String> fileName;
+  final Value<String> path;
+  final Value<int> sizeBytes;
+  final Value<int> downloadedBytes;
+  final Value<String> sha256;
+  final Value<String> status;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ModelFilesCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.path = const Value.absent(),
+    this.sizeBytes = const Value.absent(),
+    this.downloadedBytes = const Value.absent(),
+    this.sha256 = const Value.absent(),
+    this.status = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ModelFilesCompanion.insert({
+    required String id,
+    required String kind,
+    required String fileName,
+    required String path,
+    required int sizeBytes,
+    this.downloadedBytes = const Value.absent(),
+    required String sha256,
+    required String status,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       kind = Value(kind),
+       fileName = Value(fileName),
+       path = Value(path),
+       sizeBytes = Value(sizeBytes),
+       sha256 = Value(sha256),
+       status = Value(status),
+       updatedAt = Value(updatedAt);
+  static Insertable<ModelFileRow> custom({
+    Expression<String>? id,
+    Expression<String>? kind,
+    Expression<String>? fileName,
+    Expression<String>? path,
+    Expression<int>? sizeBytes,
+    Expression<int>? downloadedBytes,
+    Expression<String>? sha256,
+    Expression<String>? status,
+    Expression<String>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (fileName != null) 'file_name': fileName,
+      if (path != null) 'path': path,
+      if (sizeBytes != null) 'size_bytes': sizeBytes,
+      if (downloadedBytes != null) 'downloaded_bytes': downloadedBytes,
+      if (sha256 != null) 'sha256': sha256,
+      if (status != null) 'status': status,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ModelFilesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? kind,
+    Value<String>? fileName,
+    Value<String>? path,
+    Value<int>? sizeBytes,
+    Value<int>? downloadedBytes,
+    Value<String>? sha256,
+    Value<String>? status,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ModelFilesCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      fileName: fileName ?? this.fileName,
+      path: path ?? this.path,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      downloadedBytes: downloadedBytes ?? this.downloadedBytes,
+      sha256: sha256 ?? this.sha256,
+      status: status ?? this.status,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (path.present) {
+      map['path'] = Variable<String>(path.value);
+    }
+    if (sizeBytes.present) {
+      map['size_bytes'] = Variable<int>(sizeBytes.value);
+    }
+    if (downloadedBytes.present) {
+      map['downloaded_bytes'] = Variable<int>(downloadedBytes.value);
+    }
+    if (sha256.present) {
+      map['sha256'] = Variable<String>(sha256.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<String>(
+        $ModelFilesTable.$converterupdatedAt.toSql(updatedAt.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ModelFilesCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('fileName: $fileName, ')
+          ..write('path: $path, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('downloadedBytes: $downloadedBytes, ')
+          ..write('sha256: $sha256, ')
+          ..write('status: $status, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8796,6 +10092,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OutboxTable outbox = $OutboxTable(this);
   late final $SyncStateTable syncState = $SyncStateTable(this);
   late final $SyncConflictsTable syncConflicts = $SyncConflictsTable(this);
+  late final $InputBatchesTable inputBatches = $InputBatchesTable(this);
+  late final $InputBatchItemsTable inputBatchItems = $InputBatchItemsTable(
+    this,
+  );
+  late final $ModelFilesTable modelFiles = $ModelFilesTable(this);
   late final Index transactionsLedgerDate = Index(
     'transactions_ledger_date',
     'CREATE INDEX transactions_ledger_date ON transactions (ledger_id, occurred_on)',
@@ -8821,6 +10122,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     outbox,
     syncState,
     syncConflicts,
+    inputBatches,
+    inputBatchItems,
+    modelFiles,
     transactionsLedgerDate,
     transactionsLedgerDedup,
   ];
@@ -13070,6 +14374,720 @@ typedef $$SyncConflictsTableProcessedTableManager =
       SyncConflictRow,
       PrefetchHooks Function()
     >;
+typedef $$InputBatchesTableCreateCompanionBuilder =
+    InputBatchesCompanion Function({
+      required String id,
+      required String ledgerId,
+      required DateTime createdAt,
+      required TxSource source,
+      required int itemCount,
+      Value<DateTime?> undoneAt,
+      Value<int> rowid,
+    });
+typedef $$InputBatchesTableUpdateCompanionBuilder =
+    InputBatchesCompanion Function({
+      Value<String> id,
+      Value<String> ledgerId,
+      Value<DateTime> createdAt,
+      Value<TxSource> source,
+      Value<int> itemCount,
+      Value<DateTime?> undoneAt,
+      Value<int> rowid,
+    });
+
+class $$InputBatchesTableFilterComposer
+    extends Composer<_$AppDatabase, $InputBatchesTable> {
+  $$InputBatchesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ledgerId => $composableBuilder(
+    column: $table.ledgerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DateTime, DateTime, String> get createdAt =>
+      $composableBuilder(
+        column: $table.createdAt,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnWithTypeConverterFilters<TxSource, TxSource, String> get source =>
+      $composableBuilder(
+        column: $table.source,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get itemCount => $composableBuilder(
+    column: $table.itemCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DateTime?, DateTime, String> get undoneAt =>
+      $composableBuilder(
+        column: $table.undoneAt,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+}
+
+class $$InputBatchesTableOrderingComposer
+    extends Composer<_$AppDatabase, $InputBatchesTable> {
+  $$InputBatchesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ledgerId => $composableBuilder(
+    column: $table.ledgerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get itemCount => $composableBuilder(
+    column: $table.itemCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get undoneAt => $composableBuilder(
+    column: $table.undoneAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$InputBatchesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InputBatchesTable> {
+  $$InputBatchesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get ledgerId =>
+      $composableBuilder(column: $table.ledgerId, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DateTime, String> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TxSource, String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<int> get itemCount =>
+      $composableBuilder(column: $table.itemCount, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DateTime?, String> get undoneAt =>
+      $composableBuilder(column: $table.undoneAt, builder: (column) => column);
+}
+
+class $$InputBatchesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InputBatchesTable,
+          InputBatchRow,
+          $$InputBatchesTableFilterComposer,
+          $$InputBatchesTableOrderingComposer,
+          $$InputBatchesTableAnnotationComposer,
+          $$InputBatchesTableCreateCompanionBuilder,
+          $$InputBatchesTableUpdateCompanionBuilder,
+          (
+            InputBatchRow,
+            BaseReferences<_$AppDatabase, $InputBatchesTable, InputBatchRow>,
+          ),
+          InputBatchRow,
+          PrefetchHooks Function()
+        > {
+  $$InputBatchesTableTableManager(_$AppDatabase db, $InputBatchesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InputBatchesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InputBatchesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InputBatchesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ledgerId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<TxSource> source = const Value.absent(),
+                Value<int> itemCount = const Value.absent(),
+                Value<DateTime?> undoneAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InputBatchesCompanion(
+                id: id,
+                ledgerId: ledgerId,
+                createdAt: createdAt,
+                source: source,
+                itemCount: itemCount,
+                undoneAt: undoneAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ledgerId,
+                required DateTime createdAt,
+                required TxSource source,
+                required int itemCount,
+                Value<DateTime?> undoneAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InputBatchesCompanion.insert(
+                id: id,
+                ledgerId: ledgerId,
+                createdAt: createdAt,
+                source: source,
+                itemCount: itemCount,
+                undoneAt: undoneAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$InputBatchesTable, InputBatchRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $InputBatchesTable,
+                    InputBatchRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$InputBatchesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InputBatchesTable,
+      InputBatchRow,
+      $$InputBatchesTableFilterComposer,
+      $$InputBatchesTableOrderingComposer,
+      $$InputBatchesTableAnnotationComposer,
+      $$InputBatchesTableCreateCompanionBuilder,
+      $$InputBatchesTableUpdateCompanionBuilder,
+      (
+        InputBatchRow,
+        BaseReferences<_$AppDatabase, $InputBatchesTable, InputBatchRow>,
+      ),
+      InputBatchRow,
+      PrefetchHooks Function()
+    >;
+typedef $$InputBatchItemsTableCreateCompanionBuilder =
+    InputBatchItemsCompanion Function({
+      required String batchId,
+      required String txId,
+      required String kind,
+      required DateTime stamp,
+      Value<int> rowid,
+    });
+typedef $$InputBatchItemsTableUpdateCompanionBuilder =
+    InputBatchItemsCompanion Function({
+      Value<String> batchId,
+      Value<String> txId,
+      Value<String> kind,
+      Value<DateTime> stamp,
+      Value<int> rowid,
+    });
+
+class $$InputBatchItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $InputBatchItemsTable> {
+  $$InputBatchItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get batchId => $composableBuilder(
+    column: $table.batchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get txId => $composableBuilder(
+    column: $table.txId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DateTime, DateTime, String> get stamp =>
+      $composableBuilder(
+        column: $table.stamp,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+}
+
+class $$InputBatchItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InputBatchItemsTable> {
+  $$InputBatchItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get batchId => $composableBuilder(
+    column: $table.batchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get txId => $composableBuilder(
+    column: $table.txId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stamp => $composableBuilder(
+    column: $table.stamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$InputBatchItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InputBatchItemsTable> {
+  $$InputBatchItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get batchId =>
+      $composableBuilder(column: $table.batchId, builder: (column) => column);
+
+  GeneratedColumn<String> get txId =>
+      $composableBuilder(column: $table.txId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DateTime, String> get stamp =>
+      $composableBuilder(column: $table.stamp, builder: (column) => column);
+}
+
+class $$InputBatchItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InputBatchItemsTable,
+          InputBatchItemRow,
+          $$InputBatchItemsTableFilterComposer,
+          $$InputBatchItemsTableOrderingComposer,
+          $$InputBatchItemsTableAnnotationComposer,
+          $$InputBatchItemsTableCreateCompanionBuilder,
+          $$InputBatchItemsTableUpdateCompanionBuilder,
+          (
+            InputBatchItemRow,
+            BaseReferences<
+              _$AppDatabase,
+              $InputBatchItemsTable,
+              InputBatchItemRow
+            >,
+          ),
+          InputBatchItemRow,
+          PrefetchHooks Function()
+        > {
+  $$InputBatchItemsTableTableManager(
+    _$AppDatabase db,
+    $InputBatchItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InputBatchItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InputBatchItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InputBatchItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> batchId = const Value.absent(),
+                Value<String> txId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<DateTime> stamp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InputBatchItemsCompanion(
+                batchId: batchId,
+                txId: txId,
+                kind: kind,
+                stamp: stamp,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String batchId,
+                required String txId,
+                required String kind,
+                required DateTime stamp,
+                Value<int> rowid = const Value.absent(),
+              }) => InputBatchItemsCompanion.insert(
+                batchId: batchId,
+                txId: txId,
+                kind: kind,
+                stamp: stamp,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$InputBatchItemsTable, InputBatchItemRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $InputBatchItemsTable,
+                    InputBatchItemRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$InputBatchItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InputBatchItemsTable,
+      InputBatchItemRow,
+      $$InputBatchItemsTableFilterComposer,
+      $$InputBatchItemsTableOrderingComposer,
+      $$InputBatchItemsTableAnnotationComposer,
+      $$InputBatchItemsTableCreateCompanionBuilder,
+      $$InputBatchItemsTableUpdateCompanionBuilder,
+      (
+        InputBatchItemRow,
+        BaseReferences<_$AppDatabase, $InputBatchItemsTable, InputBatchItemRow>,
+      ),
+      InputBatchItemRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ModelFilesTableCreateCompanionBuilder = ModelFilesCompanion Function({
+  required String id,
+  required String kind,
+  required String fileName,
+  required String path,
+  required int sizeBytes,
+  Value<int> downloadedBytes,
+  required String sha256,
+  required String status,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$ModelFilesTableUpdateCompanionBuilder = ModelFilesCompanion Function({
+  Value<String> id,
+  Value<String> kind,
+  Value<String> fileName,
+  Value<String> path,
+  Value<int> sizeBytes,
+  Value<int> downloadedBytes,
+  Value<String> sha256,
+  Value<String> status,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$ModelFilesTableFilterComposer
+    extends Composer<_$AppDatabase, $ModelFilesTable> {
+  $$ModelFilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sha256 => $composableBuilder(
+    column: $table.sha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DateTime, DateTime, String> get updatedAt =>
+      $composableBuilder(
+        column: $table.updatedAt,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+}
+
+class $$ModelFilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ModelFilesTable> {
+  $$ModelFilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sha256 => $composableBuilder(
+    column: $table.sha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ModelFilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ModelFilesTable> {
+  $$ModelFilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<String> get path =>
+      $composableBuilder(column: $table.path, builder: (column) => column);
+
+  GeneratedColumn<int> get sizeBytes =>
+      $composableBuilder(column: $table.sizeBytes, builder: (column) => column);
+
+  GeneratedColumn<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sha256 =>
+      $composableBuilder(column: $table.sha256, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DateTime, String> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ModelFilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ModelFilesTable,
+          ModelFileRow,
+          $$ModelFilesTableFilterComposer,
+          $$ModelFilesTableOrderingComposer,
+          $$ModelFilesTableAnnotationComposer,
+          $$ModelFilesTableCreateCompanionBuilder,
+          $$ModelFilesTableUpdateCompanionBuilder,
+          (
+            ModelFileRow,
+            BaseReferences<_$AppDatabase, $ModelFilesTable, ModelFileRow>,
+          ),
+          ModelFileRow,
+          PrefetchHooks Function()
+        > {
+  $$ModelFilesTableTableManager(_$AppDatabase db, $ModelFilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ModelFilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ModelFilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ModelFilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> fileName = const Value.absent(),
+                Value<String> path = const Value.absent(),
+                Value<int> sizeBytes = const Value.absent(),
+                Value<int> downloadedBytes = const Value.absent(),
+                Value<String> sha256 = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ModelFilesCompanion(
+                id: id,
+                kind: kind,
+                fileName: fileName,
+                path: path,
+                sizeBytes: sizeBytes,
+                downloadedBytes: downloadedBytes,
+                sha256: sha256,
+                status: status,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String kind,
+                required String fileName,
+                required String path,
+                required int sizeBytes,
+                Value<int> downloadedBytes = const Value.absent(),
+                required String sha256,
+                required String status,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ModelFilesCompanion.insert(
+                id: id,
+                kind: kind,
+                fileName: fileName,
+                path: path,
+                sizeBytes: sizeBytes,
+                downloadedBytes: downloadedBytes,
+                sha256: sha256,
+                status: status,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ModelFilesTable, ModelFileRow>(table),
+                  BaseReferences<_$AppDatabase, $ModelFilesTable, ModelFileRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ModelFilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ModelFilesTable,
+      ModelFileRow,
+      $$ModelFilesTableFilterComposer,
+      $$ModelFilesTableOrderingComposer,
+      $$ModelFilesTableAnnotationComposer,
+      $$ModelFilesTableCreateCompanionBuilder,
+      $$ModelFilesTableUpdateCompanionBuilder,
+      (
+        ModelFileRow,
+        BaseReferences<_$AppDatabase, $ModelFilesTable, ModelFileRow>,
+      ),
+      ModelFileRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -13098,4 +15116,10 @@ class $AppDatabaseManager {
       $$SyncStateTableTableManager(_db, _db.syncState);
   $$SyncConflictsTableTableManager get syncConflicts =>
       $$SyncConflictsTableTableManager(_db, _db.syncConflicts);
+  $$InputBatchesTableTableManager get inputBatches =>
+      $$InputBatchesTableTableManager(_db, _db.inputBatches);
+  $$InputBatchItemsTableTableManager get inputBatchItems =>
+      $$InputBatchItemsTableTableManager(_db, _db.inputBatchItems);
+  $$ModelFilesTableTableManager get modelFiles =>
+      $$ModelFilesTableTableManager(_db, _db.modelFiles);
 }

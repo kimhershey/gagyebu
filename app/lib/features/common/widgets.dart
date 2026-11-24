@@ -4,12 +4,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../app/providers.dart';
 import '../../core/formatters.dart';
 
-/// 수입 · 지출을 가리키는 색.
-extension MoneyColors on ColorScheme {
-  Color get income => primary;
-  Color get expense => error;
-}
-
 /// 달을 앞뒤로 넘기는 머리줄.
 class MonthSwitcher extends ConsumerWidget {
   const MonthSwitcher({super.key});

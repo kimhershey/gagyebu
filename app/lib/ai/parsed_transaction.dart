@@ -131,9 +131,12 @@ class ParsedTransaction {
   /// 이 초안을 만든 규칙의 ID. 모델이 만들었으면 'llm:<모델 이름>'이다.
   final String ruleId;
 
-  /// 모델이 만든 초안이면 그 모델의 이름.
+  /// 모델이 만든 초안이면 그 모델의 이름. 글을 읽은 모델은 'llm:', 이미지를 읽은 모델은
+  /// 'vlm:'으로 시작한다.
   String? get modelName =>
-      ruleId.startsWith('llm:') ? ruleId.substring(4) : null;
+      ruleId.startsWith('llm:') || ruleId.startsWith('vlm:')
+      ? ruleId.substring(4)
+      : null;
 
   /// 초안의 근거가 된 원문.
   final String raw;
