@@ -17,12 +17,12 @@ concurrency:
 
 env:
   FLUTTER_VERSION: '3.50.0'
-  # 서버(Supabase) 주소와 공개 키. 저장소 변수(Settings → Secrets and variables → Actions →
-  # Variables)에 SUPABASE_URL과 SUPABASE_PUBLISHABLE_KEY를 넣으면 로그인과 동기화가 켜진 앱이
-  # 빌드된다. 비워 두면 기기 안에서만 동작하는 앱이 된다. 둘 다 공개해도 되는 값이다.
+  # 서버(Supabase) 주소와 공개 키. 앱에 그대로 들어가는 공개 값이다(데이터는 서버의 행 단위 보안
+  # 정책이 지킨다). 다른 프로젝트에 붙이려면 저장소 변수 SUPABASE_URL · SUPABASE_PUBLISHABLE_KEY로
+  # 덮어쓴다. service_role 키와 DB 비밀번호는 여기에도, 저장소 어디에도 넣지 않는다.
   SERVER_DEFINES: >-
-    --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }}
-    --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+    --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL || 'https://trygkkxqeqbtwxqmclyx.supabase.co' }}
+    --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_I2hsFvk7-xz0B0oO2SKXlQ_aXvVwkZd' }}
 
 jobs:
   test:
