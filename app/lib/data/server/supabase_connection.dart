@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 
@@ -6,7 +8,11 @@ import 'server_config.dart';
 import 'server_connection.dart';
 
 /// Supabase에 연결한다. 저장해 둔 로그인 세션이 있으면 되살린다.
+///
+/// 앱을 다시 열 때(로그인해서 가계부가 바뀌었을 때)도 불린다. 연결은 한 번만 만든다.
 Future<ServerConnection> connectSupabase(ServerConfig config) async {
+  final existing = _connection;
+  if (existing != null) return existing;
   final supabase = await Supabase.initialize(
     url: config.url,
     publishableKey: config.publishableKey,
@@ -14,8 +20,10 @@ Future<ServerConnection> connectSupabase(ServerConfig config) async {
       authFlowType: AuthFlowType.pkce,
     ),
   );
-  return supabaseConnection(supabase.client);
+  return _connection = supabaseConnection(supabase.client);
 }
+
+ServerConnection? _connection;
 
 /// [client]로 연결 한 벌을 만든다.
 ServerConnection supabaseConnection(SupabaseClient client) => ServerConnection(
@@ -32,9 +40,24 @@ ServerConnection supabaseConnection(SupabaseClient client) => ServerConnection(
 );
 
 class SupabaseAuthService implements AuthService {
-  SupabaseAuthService(this._client);
+  SupabaseAuthService(this._client) {
+    // 비밀번호를 다시 정하는 메일의 링크로 들어오면 서버가 알려 준다. 앱이 뜨기 전에 온
+    // 알림도 여기서 받는다(알림은 처음부터 다시 들려준다).
+    _client.auth.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.passwordRecovery) _setRecovery(true);
+      if (state.event == AuthChangeEvent.signedOut) _setRecovery(false);
+    }, onError: (Object _) {});
+  }
 
   final SupabaseClient _client;
+  final _recovery = StreamController<bool>.broadcast();
+  bool _recoveryPending = false;
+
+  void _setRecovery(bool pending) {
+    if (_recoveryPending == pending) return;
+    _recoveryPending = pending;
+    _recovery.add(pending);
+  }
 
   static AuthUser? _user(User? user) =>
       user == null ? null : AuthUser(id: user.id, email: user.email);
@@ -92,6 +115,23 @@ class SupabaseAuthService implements AuthService {
     return SignUpResult.confirmationSent;
   });
 
+  @override
+  Future<void> sendPasswordReset({required String email}) => _guard(
+    () => _client.auth.resetPasswordForEmail(email, redirectTo: _returnUrl),
+  );
+
+  @override
+  bool get passwordRecoveryPending => _recoveryPending;
+
+  @override
+  Stream<bool> get passwordRecoveryChanges => _recovery.stream;
+
+  @override
+  Future<void> updatePassword({required String password}) => _guard(() async {
+    await _client.auth.updateUser(UserAttributes(password: password));
+    _setRecovery(false);
+  });
+
   /// 서버의 오류를 [AuthFailure]로 바꾼다.
   static Future<T> _guard<T>(Future<T> Function() run) async {
     try {
@@ -117,6 +157,7 @@ class SupabaseAuthService implements AuthService {
           'user_already_exists' ||
           'email_exists' => AuthFailureReason.alreadyRegistered,
           'weak_password' => AuthFailureReason.weakPassword,
+          'same_password' => AuthFailureReason.samePassword,
           'email_address_invalid' ||
           'validation_failed' => AuthFailureReason.invalidEmail,
           'over_email_send_rate_limit' ||

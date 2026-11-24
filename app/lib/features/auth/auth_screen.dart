@@ -24,11 +24,7 @@ class AuthScreen extends ConsumerStatefulWidget {
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends ConsumerState<AuthScreen>
-    with LeaveWhenSignedIn {
-  /// 서버의 기본 최소 길이.
-  static const _minPasswordLength = 6;
-
+class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
@@ -53,11 +49,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   /// 입력이 틀렸으면 그 까닭.
   String? _validate() {
     final email = _email.text.trim();
-    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-      return '이메일 주소를 확인해 주세요';
-    }
-    if (_password.text.length < _minPasswordLength) {
-      return '비밀번호는 $_minPasswordLength자 이상이어야 합니다';
+    if (!looksLikeEmail(email)) return '이메일 주소를 확인해 주세요';
+    if (_password.text.length < minPasswordLength) {
+      return '비밀번호는 $minPasswordLength자 이상이어야 합니다';
     }
     if (_signUp && _password.text != _confirm.text) {
       return '비밀번호가 서로 다릅니다';
@@ -73,7 +67,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     try {
       await action();
     } on AuthFailure catch (failure) {
-      if (mounted) setState(() => _error = _message(failure));
+      if (mounted) {
+        setState(
+          () => _error = authFailureMessage(
+            failure,
+            action: _signUp ? '계정을 만들지' : '로그인하지',
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -97,40 +98,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         setState(() => _sentTo = email);
       }
     });
-    // 로그인됐으면 로그인 상태가 바뀌면서 이 화면에서 나간다.
+    // 로그인됐으면 라우터가 가계부로 보낸다.
     TextInput.finishAutofillContext();
   }
 
   Future<void> _google() =>
       _run(ref.read(syncControllerProvider.notifier).signInWithGoogle);
 
-  String _message(AuthFailure failure) => switch (failure.reason) {
-    AuthFailureReason.invalidCredentials => '이메일이나 비밀번호가 맞지 않습니다',
-    AuthFailureReason.emailNotConfirmed =>
-      '메일 확인이 끝나지 않았습니다. 가입할 때 받은 메일의 링크를 눌러 주세요',
-    AuthFailureReason.alreadyRegistered => '이미 가입한 이메일입니다. 로그인해 주세요',
-    AuthFailureReason.weakPassword => '비밀번호가 너무 쉽습니다. 더 길게 정해 주세요',
-    AuthFailureReason.invalidEmail => '이메일 주소를 확인해 주세요',
-    AuthFailureReason.rateLimited => '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요',
-    AuthFailureReason.signupDisabled => '지금은 새 계정을 만들 수 없습니다',
-    AuthFailureReason.network => '서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요',
-    AuthFailureReason.unknown =>
-      '${_signUp ? '계정을 만들지' : '로그인하지'} 못했습니다'
-          '${failure.detail == null ? '' : ': ${failure.detail}'}',
-  };
-
-  void _back() => context.canPop() ? context.pop() : context.go('/welcome');
+  void _back() => context.go('/welcome');
 
   void _switchMode() =>
-      context.pushReplacement(_signUp ? '/welcome/login' : '/welcome/signup');
+      context.go(_signUp ? '/welcome/login' : '/welcome/signup');
 
   @override
   Widget build(BuildContext context) {
-    final status = ref.watch(syncControllerProvider);
-    if (leaveIfSignedIn(status)) {
-      return const AuthFrame(
-        children: [Center(child: CircularProgressIndicator())],
-      );
+    if (ref.watch(syncControllerProvider).signedIn) {
+      return const AuthFrame.busy();
     }
     final theme = Theme.of(context);
     final muted = theme.textTheme.bodySmall?.copyWith(
@@ -148,7 +131,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           icon: const Icon(Icons.arrow_back),
         ),
         const SizedBox(width: 4),
-        Text(_signUp ? '계정 만들기' : '로그인', style: theme.textTheme.headlineSmall),
+        // 좁은 화면이나 큰 글자에서는 줄을 바꾼다.
+        Expanded(
+          child: Text(
+            _signUp ? '계정 만들기' : '로그인',
+            style: theme.textTheme.headlineSmall,
+          ),
+        ),
       ],
     );
 
@@ -250,7 +239,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                 onSubmitted: _signUp ? null : (_) => _submit(),
                 decoration: InputDecoration(
                   labelText: '비밀번호',
-                  helperText: _signUp ? '$_minPasswordLength자 이상' : null,
+                  helperText: _signUp ? '$minPasswordLength자 이상' : null,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     tooltip: _obscure ? '비밀번호 보기' : '비밀번호 가리기',
@@ -309,6 +298,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           onPressed: _busy ? null : _switchMode,
           child: Text(_signUp ? '이미 계정이 있으면 로그인' : '계정이 없으면 계정 만들기'),
         ),
+        if (!_signUp)
+          TextButton(
+            key: const ValueKey('auth-forgot'),
+            onPressed: _busy ? null : () => context.go('/welcome/reset'),
+            child: const Text('비밀번호를 잊었습니다'),
+          ),
       ],
     );
   }

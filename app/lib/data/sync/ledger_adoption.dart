@@ -7,7 +7,6 @@ library;
 import 'package:drift/drift.dart';
 
 import '../db/database.dart';
-import '../device_flags.dart';
 import '../repositories/ledger_repository.dart';
 import 'sync_engine.dart';
 
@@ -196,11 +195,7 @@ class LedgerAdoption {
     ]) {
       await db.customStatement('delete from $table');
     }
-    // 기기 ID와 기기에만 남기는 표시('로그인하지 않고 사용')는 지우지 않는다.
-    await db.customStatement(
-      "delete from sync_state where key not in ('device_id', ?)",
-      [DeviceFlags.loginSkippedKey],
-    );
+    await db.customStatement("delete from sync_state where key <> 'device_id'");
   });
 
   Future<void> _setOwner(String userId) => db

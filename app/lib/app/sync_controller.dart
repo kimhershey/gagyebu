@@ -103,6 +103,14 @@ class SyncController extends Notifier<SyncStatus> {
   Future<SignUpResult> signUpWithPassword(String email, String password) =>
       _auth.signUpWithPassword(email: email, password: password);
 
+  /// 비밀번호를 다시 정하는 메일을 보낸다. 하지 못하면 [AuthFailure]를 던진다.
+  Future<void> sendPasswordReset(String email) =>
+      _auth.sendPasswordReset(email: email);
+
+  /// 로그인한 계정의 비밀번호를 바꾼다. 하지 못하면 [AuthFailure]를 던진다.
+  Future<void> updatePassword(String password) =>
+      _auth.updatePassword(password: password);
+
   /// 로그아웃한다. 기기의 가계부는 그대로 둔다.
   Future<void> signOut() async {
     await _server?.auth.signOut();

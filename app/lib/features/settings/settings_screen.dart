@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/providers.dart';
@@ -505,29 +504,8 @@ class _AccountTile extends ConsumerWidget {
               : '가계부는 이 기기 안에만 저장됩니다(올리지 않은 변경 $pending건)',
         );
       case SyncPhase.signedOut:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            tile(
-              Icons.cloud_off_outlined,
-              '로그인하지 않았습니다',
-              '로그인하면 이 가계부를 계정에 올리고 다른 기기와 맞춥니다',
-            ),
-            actions([
-              FilledButton.tonalIcon(
-                key: const ValueKey('sign-in'),
-                onPressed: () => context.push('/welcome/login'),
-                icon: const Icon(Icons.login, size: 18),
-                label: const Text('로그인'),
-              ),
-              TextButton(
-                key: const ValueKey('sign-up'),
-                onPressed: () => context.push('/welcome/signup'),
-                child: const Text('계정 만들기'),
-              ),
-            ]),
-          ],
-        );
+        // 로그아웃하면 곧 로그인 안내 화면으로 넘어간다.
+        return tile(Icons.cloud_off_outlined, '로그인하지 않았습니다', '로그인 화면으로 이동합니다');
       case SyncPhase.differentAccount:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

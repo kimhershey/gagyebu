@@ -36,6 +36,9 @@ enum AuthFailureReason {
   /// 비밀번호가 서버의 기준에 못 미친다.
   weakPassword,
 
+  /// 새 비밀번호가 지금 비밀번호와 같다.
+  samePassword,
+
   /// 이메일 주소의 꼴이 맞지 않는다.
   invalidEmail,
 
@@ -101,6 +104,18 @@ abstract interface class AuthService {
     required String email,
     required String password,
   });
+
+  /// 비밀번호를 다시 정하는 링크를 메일로 보낸다.
+  Future<void> sendPasswordReset({required String email});
+
+  /// 그 메일의 링크로 들어와 새 비밀번호를 정해야 하는지.
+  bool get passwordRecoveryPending;
+
+  /// [passwordRecoveryPending]이 바뀔 때마다 알린다.
+  Stream<bool> get passwordRecoveryChanges;
+
+  /// 로그인한 계정의 비밀번호를 바꾼다.
+  Future<void> updatePassword({required String password});
 
   /// 이 기기에서만 로그아웃한다. 기기의 가계부는 지우지 않는다.
   Future<void> signOut();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +8,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../data/db/connection/connection.dart';
 import '../data/db/database.dart';
-import '../data/device_flags.dart';
 import '../data/repositories/ledger_repository.dart';
 import '../data/server/server_config.dart';
 import '../data/server/server_connection.dart';
@@ -35,11 +36,8 @@ Future<AppServices> openAppServices() async {
     startedAt: ledger?.createdAt,
     takenOver: opened.takenOver,
     server: server,
-    // 로그인할 수 있는데 하지 않았고, 하지 않겠다고 한 적도 없으면 로그인 안내부터 보여 준다.
-    showWelcome:
-        server != null &&
-        server.auth.currentUser == null &&
-        !await DeviceFlags(db).loginSkipped(),
+    // 로그인할 수 있는데 하지 않았으면 로그인 안내부터 보여 준다.
+    showWelcome: server != null && server.auth.currentUser == null,
   );
 }
 
@@ -90,8 +88,12 @@ class _BootstrapState extends State<Bootstrap> {
   /// (웹 엔진은 앱이 주소를 넘겨받은 뒤에는 시작 주소를 '/'로 돌려 버린다.)
   GoRouter? _router;
 
-  /// 로그인 안내 화면을 거쳐야 하는 동안 true. 라우터가 본다.
+  /// 로그인하지 않아 안내 화면에 머물러야 하는 동안 true. 라우터가 본다.
   final _welcomeGate = ValueNotifier(false);
+
+  /// 비밀번호를 다시 정하는 메일의 링크로 들어와 새 비밀번호를 정해야 하는 동안 true.
+  final _recoveryGate = ValueNotifier(false);
+  StreamSubscription<bool>? _recoveries;
 
   @override
   void initState() {
@@ -102,7 +104,9 @@ class _BootstrapState extends State<Bootstrap> {
   @override
   void dispose() {
     _router?.dispose();
+    _recoveries?.cancel();
     _welcomeGate.dispose();
+    _recoveryGate.dispose();
     super.dispose();
   }
 
@@ -123,6 +127,12 @@ class _BootstrapState extends State<Bootstrap> {
       if (opened != _opened) return;
       _current = services;
       _welcomeGate.value = services.showWelcome;
+      final auth = services.server?.auth;
+      _recoveries?.cancel();
+      _recoveries = auth?.passwordRecoveryChanges.listen(
+        (pending) => _recoveryGate.value = pending,
+      );
+      _recoveryGate.value = auth?.passwordRecoveryPending ?? false;
       services.takenOver?.then((_) {
         if (!mounted || opened != _opened) return;
         _current = null;
@@ -133,6 +143,17 @@ class _BootstrapState extends State<Bootstrap> {
         });
       });
     }, onError: (Object _) {});
+  }
+
+  /// 로그인 상태를 따라 안내 화면을 걸거나 푼다.
+  void _onSyncStatus(SyncStatus? previous, SyncStatus next) {
+    // 로그아웃하면 안내 화면으로 돌아가고, 로그인하면 가계부로 넘어간다.
+    _welcomeGate.value = next.phase == SyncPhase.signedOut;
+    if (next.phase == SyncPhase.differentAccount &&
+        previous?.phase != SyncPhase.differentAccount) {
+      // 이 기기에 다른 계정의 가계부가 있다. 지우고 받을지 묻는 곳으로 보낸다.
+      _router?.go('/settings');
+    }
   }
 
   @override
@@ -165,16 +186,19 @@ class _BootstrapState extends State<Bootstrap> {
               appRestartProvider.overrideWithValue(() {
                 if (mounted) setState(_open);
               }),
-              welcomeGateProvider.overrideWithValue(_welcomeGate),
             ],
             // 화면이 떠 있는 동안 로그인 상태를 따라가며 동기화한다.
             child: Consumer(
               builder: (context, ref, child) {
                 ref.watch(syncControllerProvider);
+                ref.listen(syncControllerProvider, _onSyncStatus);
                 return child!;
               },
               child: GagyebuApp(
-                router: _router ??= createRouter(welcomeGate: _welcomeGate),
+                router: _router ??= createRouter(
+                  welcomeGate: _welcomeGate,
+                  recoveryGate: _recoveryGate,
+                ),
               ),
             ),
           );

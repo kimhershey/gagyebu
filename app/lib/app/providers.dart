@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ai/llm/llm_engine.dart';
 import '../core/local_date.dart';
 import '../data/db/database.dart';
-import '../data/device_flags.dart';
 import '../data/repositories/ledger_repository.dart';
 import '../data/server/server_connection.dart';
 import '../domain/month_period.dart';
@@ -47,8 +45,7 @@ class AppServices {
   /// 서버 연결(로그인 · 동기화). 서버 주소를 넣지 않은 빌드에는 없다.
   final ServerConnection? server;
 
-  /// 시작할 때 로그인 안내 화면부터 보여 줄지. 서버가 있고, 로그인하지 않았고,
-  /// '로그인하지 않고 사용'을 고른 적이 없을 때 true다.
+  /// 시작할 때 로그인 안내 화면부터 보여 줄지. 서버가 있는데 로그인하지 않았으면 true다.
   final bool showWelcome;
 }
 
@@ -60,22 +57,6 @@ final appServicesProvider = Provider<AppServices>(
 /// 앱을 다시 연다: 로컬 DB를 닫았다 열고 화면 상태를 새로 잡는다. 로그인해서 쓰는 가계부가
 /// 바뀌었을 때 부른다. [Bootstrap]이 채운다.
 final appRestartProvider = Provider<void Function()>((ref) => () {});
-
-/// 로그인 안내 화면을 거쳐야 하는 동안 true. 라우터가 이 값을 보고 다른 화면으로 가지
-/// 못하게 막는다. [Bootstrap]이 채운다.
-final welcomeGateProvider = Provider<ValueNotifier<bool>>((ref) {
-  final gate = ValueNotifier(false);
-  ref.onDispose(gate.dispose);
-  return gate;
-});
-
-/// '로그인하지 않고 사용'을 골랐다고 적고 안내 화면을 푼다.
-final skipLoginProvider = Provider<Future<void> Function()>(
-  (ref) => () async {
-    await DeviceFlags(ref.read(appServicesProvider).db).markLoginSkipped();
-    ref.read(welcomeGateProvider).value = false;
-  },
-);
 
 final repositoryProvider = Provider<LedgerRepository>(
   (ref) => ref.watch(appServicesProvider).repository,

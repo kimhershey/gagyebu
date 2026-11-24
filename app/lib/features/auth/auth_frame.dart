@@ -1,13 +1,14 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../app/providers.dart';
-import '../../app/sync_controller.dart';
+import '../../data/server/server_connection.dart';
 
 /// 로그인 안내 화면들이 함께 쓰는 틀: 가운데에 놓인 좁은 한 칸.
 class AuthFrame extends StatelessWidget {
   const AuthFrame({super.key, required this.children});
+
+  /// 로그인이 끝나 가계부로 넘어가는 동안 보여 주는 화면.
+  const AuthFrame.busy({super.key})
+    : children = const [Center(child: CircularProgressIndicator())];
 
   final List<Widget> children;
 
@@ -33,31 +34,28 @@ class AuthFrame extends StatelessWidget {
   }
 }
 
-/// 로그인이 끝나면 안내 화면에서 나가게 하는 상태.
-///
-/// 로그인은 화면 밖에서 끝난다: Google 로그인은 다른 페이지에 다녀오고, 첫 로그인이면 앱이
-/// 새 가계부로 다시 열린다. 그래서 단추를 누른 자리에서가 아니라 로그인 상태를 보고 나간다.
-mixin LeaveWhenSignedIn<T extends ConsumerStatefulWidget> on ConsumerState<T> {
-  bool _leaving = false;
+/// 서버의 기본 최소 비밀번호 길이.
+const minPasswordLength = 6;
 
-  /// 로그인했으면 다음 프레임에 나가고 true를 돌려준다. 그동안은 진행 표시를 그리면 된다.
-  bool leaveIfSignedIn(SyncStatus status) {
-    if (!status.signedIn) return false;
-    if (!_leaving) {
-      _leaving = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ref.read(welcomeGateProvider).value = false;
-        // 설정에서 들어왔으면 설정으로, 시작 화면이었으면 가계부로 간다.
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go(
-            status.phase == SyncPhase.differentAccount ? '/settings' : '/',
-          );
-        }
-      });
-    }
-    return true;
-  }
-}
+/// 이메일 주소처럼 생겼는지. 정확한 검사는 서버가 한다.
+bool looksLikeEmail(String text) =>
+    RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(text);
+
+/// 로그인 관련 요청이 실패한 까닭을 사용자에게 보여 줄 말로 바꾼다.
+///
+/// [action]은 하려던 일이다('로그인하지', '계정을 만들지'). 까닭을 모를 때 쓴다.
+String authFailureMessage(AuthFailure failure, {required String action}) =>
+    switch (failure.reason) {
+      AuthFailureReason.invalidCredentials => '이메일이나 비밀번호가 맞지 않습니다',
+      AuthFailureReason.emailNotConfirmed =>
+        '메일 확인이 끝나지 않았습니다. 가입할 때 받은 메일의 링크를 눌러 주세요',
+      AuthFailureReason.alreadyRegistered => '이미 가입한 이메일입니다. 로그인해 주세요',
+      AuthFailureReason.weakPassword => '비밀번호가 너무 쉽습니다. 더 길게 정해 주세요',
+      AuthFailureReason.samePassword => '지금 쓰는 비밀번호와 같습니다',
+      AuthFailureReason.invalidEmail => '이메일 주소를 확인해 주세요',
+      AuthFailureReason.rateLimited => '요청이 너무 많습니다. 잠시 뒤에 다시 해 주세요',
+      AuthFailureReason.signupDisabled => '지금은 새 계정을 만들 수 없습니다',
+      AuthFailureReason.network => '서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요',
+      AuthFailureReason.unknown =>
+        '$action 못했습니다${failure.detail == null ? '' : ': ${failure.detail}'}',
+    };
