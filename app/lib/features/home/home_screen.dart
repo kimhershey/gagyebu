@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/providers.dart';
+import '../../app/theme/tokens.dart';
 import '../../core/breakpoints.dart';
 import '../../core/formatters.dart';
 import '../../data/repositories/ledger_repository.dart';
@@ -80,13 +81,13 @@ class _Totals extends StatelessWidget {
     final income = _TotalCard(
       label: '수입',
       value: won(summary.income),
-      color: scheme.income,
+      color: context.tokens.income,
       valueKey: const ValueKey('total-income'),
     );
     final expense = _TotalCard(
       label: '지출',
       value: won(summary.expense),
-      color: scheme.expense,
+      color: context.tokens.expense,
       valueKey: const ValueKey('total-expense'),
     );
     final net = _TotalCard(

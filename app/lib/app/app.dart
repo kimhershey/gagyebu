@@ -1,54 +1,43 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../features/lock/app_lock_gate.dart';
 import 'router.dart';
+import 'theme/theme_setting.dart';
 
-const _seed = Color(0xFF2F6FED);
-
-/// 앱의 테마. 앱이 뜨기 전의 화면(여는 중, 안내)도 같은 색과 글꼴을 쓴다.
-ThemeData appTheme(Brightness brightness) {
-  final scheme = ColorScheme.fromSeed(seedColor: _seed, brightness: brightness);
-  return ThemeData(
-    colorScheme: scheme,
-    // 한글 글꼴을 앱에 넣어, 웹에서도 외부 글꼴 서버 없이 같은 모양으로 보이게 한다.
-    fontFamily: 'Pretendard',
-    visualDensity: VisualDensity.standard,
-    cardTheme: CardThemeData(
-      elevation: 0,
-      color: scheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    ),
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(),
-      isDense: true,
-    ),
-  );
-}
-
-class GagyebuApp extends StatefulWidget {
+class GagyebuApp extends ConsumerStatefulWidget {
   const GagyebuApp({super.key, this.router});
 
   /// 시험에서 시작 주소를 바꿀 때 넘긴다.
   final GoRouter? router;
 
   @override
-  State<GagyebuApp> createState() => _GagyebuAppState();
+  ConsumerState<GagyebuApp> createState() => _GagyebuAppState();
 }
 
-class _GagyebuAppState extends State<GagyebuApp> {
+class _GagyebuAppState extends ConsumerState<GagyebuApp> {
   late final GoRouter _router = widget.router ?? createRouter();
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: '가계부',
-      debugShowCheckedModeBanner: false,
-      theme: appTheme(Brightness.light),
-      darkTheme: appTheme(Brightness.dark),
-      locale: const Locale('ko'),
-      supportedLocales: const [Locale('ko')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      routerConfig: _router,
+    final theme = ref.watch(themeControllerProvider);
+    // 설정에서 테마를 바꾸면 바로 다시 그린다.
+    return ListenableBuilder(
+      listenable: theme,
+      builder: (context, _) => MaterialApp.router(
+        title: '가계부',
+        debugShowCheckedModeBanner: false,
+        theme: theme.light,
+        darkTheme: theme.dark,
+        themeMode: theme.mode,
+        locale: const Locale('ko'),
+        supportedLocales: const [Locale('ko')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        routerConfig: _router,
+        // 앱 잠금이 켜져 있으면 화면 전체를 가린다.
+        builder: (context, child) => AppLockGate(child: child!),
+      ),
     );
   }
 }

@@ -26,13 +26,12 @@ void main() {
       final services = await createTestServices();
       await pumpApp(tester, services, size: size);
 
-      await tester.tap(find.byKey(const ValueKey('input-fab')));
-      await tester.pumpAndSettle();
+      // 어느 화면에서나 보이는 입력창에 붙여넣고 보낸다.
       await tester.enterText(
-        find.byKey(const ValueKey('input-text')),
+        find.byKey(const ValueKey('composer-input')),
         _cardSms,
       );
-      await tester.tap(find.byKey(const ValueKey('input-analyze')));
+      await tester.tap(find.byKey(const ValueKey('composer-send')));
       await tester.pumpAndSettle();
 
       // 검토 카드: 읽어 낸 값과 근거
@@ -51,6 +50,12 @@ void main() {
       expect(
         tester.widget<Text>(find.byKey(const ValueKey('total-expense'))).data,
         '12,500원',
+      );
+      // 최근 내역은 좁은 화면에서 아래쪽에 있다.
+      await tester.scrollUntilVisible(
+        find.text('김밥천국 강남점'),
+        200,
+        scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('김밥천국 강남점'), findsOneWidget);
 

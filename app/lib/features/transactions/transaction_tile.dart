@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/formatters.dart';
 import '../../data/repositories/ledger_repository.dart';
 import '../../domain/enums.dart';
-import '../common/widgets.dart';
+import '../../app/theme/tokens.dart';
 
 /// 금액을 종류에 맞는 색과 부호로 그린다.
 class AmountText extends StatelessWidget {
@@ -15,20 +15,23 @@ class AmountText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final tokens = context.tokens;
     final row = view.row;
     final (text, color) = switch (row.type) {
-      TxType.income => ('+${won(row.amount)}', scheme.income),
-      TxType.expense => ('-${won(row.amount)}', scheme.expense),
-      TxType.transfer => (won(row.amount), scheme.onSurfaceVariant),
+      TxType.income => ('+${won(row.amount)}', tokens.income),
+      TxType.expense => ('-${won(row.amount)}', tokens.expense),
+      TxType.transfer => (won(row.amount), tokens.transfer),
     };
     final base = style ?? Theme.of(context).textTheme.bodyLarge;
     return Text(
       text,
-      style: base?.copyWith(
-        color: view.isCanceled ? scheme.outline : color,
-        fontWeight: FontWeight.w600,
-        decoration: view.isCanceled ? TextDecoration.lineThrough : null,
-      ),
+      style: tokens
+          .amountStyle(base)
+          .copyWith(
+            color: view.isCanceled ? scheme.outline : color,
+            fontWeight: FontWeight.w600,
+            decoration: view.isCanceled ? TextDecoration.lineThrough : null,
+          ),
     );
   }
 }

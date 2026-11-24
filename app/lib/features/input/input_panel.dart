@@ -18,9 +18,12 @@ import 'review_draft.dart';
 /// 덩어리는 기기 안의 모델([llmEngineProvider])이 있으면 그쪽에 넘긴다. 어느 쪽이든
 /// 사용자가 확인해야 저장된다.
 class InputPanel extends ConsumerStatefulWidget {
-  const InputPanel({super.key, required this.onClose});
+  const InputPanel({super.key, required this.onClose, this.initialText});
 
   final VoidCallback onClose;
+
+  /// 열자마자 해석할 글(입력창에서 넘어온 글).
+  final String? initialText;
 
   @override
   ConsumerState<InputPanel> createState() => _InputPanelState();
@@ -35,6 +38,18 @@ class _InputPanelState extends ConsumerState<InputPanel> {
   List<UnrecognizedItem> _unknown = const [];
   TxSource _source = TxSource.paste;
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialText?.trim() ?? '';
+    if (initial.isNotEmpty) {
+      _text.text = initial;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _analyze();
+      });
+    }
+  }
 
   @override
   void dispose() {

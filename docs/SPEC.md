@@ -696,13 +696,13 @@ lib/
 │  ├─ providers.dart           상태 제공자
 │  ├─ sync_controller.dart     로그인 상태를 따라 동기화 실행
 │  ├─ background_jobs.dart     뒤에서 도는 일(반복 거래, 실시간 신호, 정리)을 켠다
+│  ├─ engine_providers.dart    지금 쓸 LlmEngine · VisionEngine
 │  └─ theme/                   palettes · tokens · app_theme · theme_setting
 ├─ core/                       날짜, 형식, 창 너비 등급, ID
 ├─ domain/                     열거형, 기본 분류, 월 기간, 월 집계, 카드 결제 예정
 ├─ ai/                         입력 해석(Flutter에 의존하지 않는다)
 │  ├─ input_interpreter.dart   해석 순서
 │  ├─ parsed_transaction.dart  거래 초안
-│  ├─ engine_providers.dart    지금 쓸 LlmEngine · VisionEngine
 │  ├─ text/                    규칙: 형식, 금액, 날짜, 방향, 이름 후보, 안내문, 한 줄 문장
 │  ├─ llm/                     모델 요청, 출력 검증, 엔진, 모델 관리, 총평
 │  ├─ query/                   자연어 조회: 조건 읽기와 실행
@@ -747,22 +747,22 @@ lib/
 | 분류의 색 · 아이콘 | `features/common/category_visual.dart` | `categoryColor(tokens, index)`, `categoryIcon(name, icon)` | 기반(완성) |
 | 입력창 | `features/composer/composer_bar.dart` · `composer_state.dart` | `ComposerBar(placement)`: 글을 받아 옛 입력 화면으로 넘기는 간단한 구현. `incomingTextProvider` | A |
 | 검토함 | `features/review/review_state.dart` · `review_panel.dart` | `reviewSessionProvider`(비어 있음), `reviewActiveProvider`, `ReviewPanel`, `ReviewScreen` | A |
-| 작업 기록 | `features/history/history_screen.dart`, `data/repositories/input_batch_repository.dart` | 빈 화면, 빈 저장소 | A |
+| 작업 기록 | `features/history/history_screen.dart` | 빈 화면. `data/repositories/input_batch_repository.dart`는 A가 새로 만든다 | A |
 | 명령 | `features/command/commands.dart` | `AppCommand`, `commandsProvider`(빈 목록), `CommandSuggestionList`(아무것도 그리지 않음), `AppShortcuts`(자식만 돌려줌) | B |
 | 홈 · 통계 | `features/home/*`, `features/stats/*` | 지금 화면 | C |
 | 내역 | `features/transactions/*` | 지금 화면 | D |
-| 자산 · 분류 · 예산 · 반복 | `features/accounts` · `categories` · `budget` · `recurring`의 `*_screen.dart`, `data/repositories/account_` · `category_` · `budget_` · `recurring_repository.dart`, `domain/card_due.dart` | 빈 화면. `BudgetRepository.watchBudgets` · `setBudget`만 있음 | E |
+| 자산 · 분류 · 예산 · 반복 | `features/accounts` · `categories` · `budget` · `recurring`의 `*_screen.dart`, `data/repositories/budget_repository.dart` | 빈 화면. `BudgetRepository.watchBudgets` · `setBudget`만 있음. `account_` · `category_` · `recurring_repository.dart`와 `domain/card_due.dart`는 E가 새로 만든다 | E |
 | 뒤에서 도는 일 | `features/recurring/recurring_runner.dart`(`recurringRunnerProvider`), `data/server/realtime.dart`(`realtimeSyncProvider`) | 아무 일도 하지 않는 제공자. `app/background_jobs.dart`가 켠다 | E, H |
-| 설정 하위 화면 | `features/settings/account_screen.dart` · `conflicts_screen.dart`, `features/transfer/data_screen.dart`, `features/lock/lock_screen.dart` | 빈 화면 | F |
+| 설정 하위 화면 | `features/settings/account_screen.dart` · `conflicts_screen.dart`, `features/transfer/data_screen.dart`, `features/lock/lock_screen.dart`, 그리고 기반이 만든 `theme_card.dart` · `manage_links_card.dart` | 빈 화면 | F |
 | 앱 잠금 | `features/lock/app_lock_gate.dart` | `AppLockGate(child)`: 자식만 돌려줌 | F |
 | 첫 실행 안내 | `features/onboarding/onboarding_card.dart` | `OnboardingCard`: 아무것도 그리지 않음 | F |
-| 엔진 | `ai/engine_providers.dart` | `llmEngineProvider` · `visionEngineProvider`(둘 다 null) | G |
+| 엔진 | `app/engine_providers.dart` | `llmEngineProvider` · `visionEngineProvider`(둘 다 null). `app/providers.dart`가 다시 내보낸다 | G |
 | 모델 화면 | `features/models/models_screen.dart` | 빈 화면 | G |
 | 조회 | `ai/query/query_intent.dart`(`looksLikeQuery` → false), `features/query/query_screen.dart` | 빈 화면 | G |
 | 총평 | `features/stats/narrative_provider.dart`(`monthNarrativeProvider` → null) | — | G |
-| 이미지 입력 | `ai/vision/vision_engine.dart`(`VisionEngine`, `imageInputAvailableProvider` → false), `features/image_input/image_input_screen.dart` | 빈 화면 | I |
+| 이미지 입력 | `ai/vision/vision_engine.dart`(`VisionEngine`), `features/image_input/image_input_available.dart`(`imageInputAvailableProvider` → false), `features/image_input/image_input_screen.dart` | 빈 화면 | I |
 | 업데이트 | `platform/update_checker.dart`(`UpdateBanner`: 아무것도 그리지 않음) | — | H |
-| 공유 수신 · 딥링크 | `platform/share_receiver.dart` · `deep_links.dart` | 아무 일도 하지 않음 | H |
+| 공유 수신 · 딥링크 | `platform/share_receiver.dart` · `deep_links.dart` | 없음. H가 새로 만들고 `app/bootstrap.dart`에서 켠다 | H |
 
 **주인이 정해진 공용 파일**
 

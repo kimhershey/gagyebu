@@ -253,3 +253,71 @@ class SyncConflicts extends Table {
   TextColumn get loserSide => text()();
   TextColumn get detectedAt => text().map(const UtcDateTimeConverter())();
 }
+
+/// 입력창 · 이미지 입력 · 가져오기로 한 번에 저장한 묶음. 되돌리기에 쓴다.
+///
+/// 기기에만 둔다. 원문은 남기지 않는다.
+@DataClassName('InputBatchRow')
+class InputBatches extends Table {
+  @override
+  String get tableName => 'input_batches';
+
+  TextColumn get id => text()();
+  TextColumn get ledgerId => text()();
+  TextColumn get createdAt => text().map(const UtcDateTimeConverter())();
+
+  /// 어떤 경로로 들어왔는지.
+  TextColumn get source => text().map(const TxSourceConverter())();
+  IntColumn get itemCount => integer()();
+
+  /// 되돌린 때. null이면 되돌리지 않았다.
+  TextColumn get undoneAt =>
+      text().map(const UtcDateTimeConverter()).nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// 묶음이 건드린 거래.
+@DataClassName('InputBatchItemRow')
+class InputBatchItems extends Table {
+  @override
+  String get tableName => 'input_batch_items';
+
+  TextColumn get batchId => text()();
+  TextColumn get txId => text()();
+
+  /// created: 묶음이 만든 거래. canceled: 묶음이 취소 처리한 원 거래.
+  TextColumn get kind => text()();
+
+  /// 저장했을 때 그 거래의 client_updated_at. 그 뒤에 고쳤는지 가리는 데 쓴다.
+  TextColumn get stamp => text().map(const UtcDateTimeConverter())();
+
+  @override
+  Set<Column> get primaryKey => {batchId, txId};
+}
+
+/// 기기에 내려받은 모델 파일.
+@DataClassName('ModelFileRow')
+class ModelFiles extends Table {
+  @override
+  String get tableName => 'model_files';
+
+  /// 카탈로그의 ID.
+  TextColumn get id => text()();
+
+  /// text · vision · mmproj
+  TextColumn get kind => text()();
+  TextColumn get fileName => text()();
+  TextColumn get path => text()();
+  IntColumn get sizeBytes => integer()();
+  IntColumn get downloadedBytes => integer().withDefault(const Constant(0))();
+  TextColumn get sha256 => text()();
+
+  /// downloading · ready · failed
+  TextColumn get status => text()();
+  TextColumn get updatedAt => text().map(const UtcDateTimeConverter())();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

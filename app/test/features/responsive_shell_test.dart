@@ -2,6 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gagyebu/core/breakpoints.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:gagyebu/features/budget/budget_screen.dart';
+import 'package:gagyebu/features/settings/settings_screen.dart';
+
 import 'test_app.dart';
 
 void main() {
@@ -17,7 +20,7 @@ void main() {
   });
 
   group('바깥 틀은 창 너비에 따라 메뉴 자리를 바꾼다', () {
-    testWidgets('좁음: 하단 탭과 가운데 입력 단추', (tester) async {
+    testWidgets('좁음: 하단 탭 네 개와 그 위의 입력창', (tester) async {
       final services = await createTestServices();
       await pumpApp(tester, services, size: phone);
       expect(find.byKey(const ValueKey('nav-bottom')), findsOneWidget);
@@ -25,14 +28,20 @@ void main() {
       expect(find.byKey(const ValueKey('nav-side')), findsNothing);
       // 떠 있는 단추는 목록의 금액을 가리므로 쓰지 않는다.
       expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.byKey(const ValueKey('input-fab')), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('nav-bottom')),
           matching: find.byType(NavigationDestination),
         ),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
+      // 입력창은 탭 바로 위에 있다.
+      final composer = tester.getRect(
+        find.byKey(const ValueKey('composer-input')),
+      );
+      final tabs = tester.getRect(find.byKey(const ValueKey('nav-bottom')));
+      expect(composer.bottom, lessThanOrEqualTo(tabs.top));
+      expect(tabs.top - composer.bottom, lessThan(16));
       expect(find.text('2026년 11월'), findsOneWidget);
       await disposeApp(tester, services);
     });
@@ -43,6 +52,11 @@ void main() {
       expect(find.byKey(const ValueKey('nav-rail')), findsOneWidget);
       expect(find.byKey(const ValueKey('nav-bottom')), findsNothing);
       expect(find.byKey(const ValueKey('nav-side')), findsNothing);
+      // 입력창은 내용 위쪽에 있다.
+      expect(
+        tester.getRect(find.byKey(const ValueKey('composer-input'))).top,
+        lessThan(60),
+      );
       await disposeApp(tester, services);
     });
 
@@ -53,6 +67,17 @@ void main() {
       expect(find.byKey(const ValueKey('nav-bottom')), findsNothing);
       expect(find.byKey(const ValueKey('nav-rail')), findsNothing);
       expect(find.text('이 기기에 저장됨'), findsOneWidget);
+      expect(find.byKey(const ValueKey('composer-input')), findsOneWidget);
+
+      // 옆 메뉴에는 탭에 없는 자산 · 예산도 있다.
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('nav-side')),
+          matching: find.text('예산'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(BudgetScreen), findsOneWidget);
       await disposeApp(tester, services);
     });
 
@@ -110,19 +135,25 @@ void main() {
 
         await tester.tap(find.text('설정').last);
         await tester.pumpAndSettle();
-        expect(find.text('자산'), findsOneWidget);
+        expect(find.text('설정'), findsWidgets);
         expect(find.text('현금'), findsWidgets);
         // 아래쪽 카드는 화면을 내려야 그려진다.
+        // 입력창의 글 칸도 스크롤되는 위젯이라, 설정 화면 안의 것을 고른다.
         await tester.scrollUntilVisible(
           find.text('시험용 메모리'),
           200,
-          scrollable: find.byType(Scrollable).first,
+          scrollable: find
+              .descendant(
+                of: find.byType(SettingsScreen),
+                matching: find.byType(Scrollable),
+              )
+              .first,
         );
         expect(find.text('시험용 메모리'), findsOneWidget);
 
         await tester.tap(find.text('홈').last);
         await tester.pumpAndSettle();
-        expect(find.text('최근 내역'), findsOneWidget);
+        expect(find.byKey(const ValueKey('total-expense')), findsOneWidget);
         await disposeApp(tester, services);
       });
     }

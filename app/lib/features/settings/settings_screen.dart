@@ -9,7 +9,10 @@ import '../../core/formatters.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/ledger_repository.dart';
 import '../../domain/enums.dart';
+import '../../platform/update_checker.dart';
 import '../common/widgets.dart';
+import 'manage_links_card.dart';
+import 'theme_card.dart';
 
 /// 설정: 자산, 분류, 월 시작일, 저장 · 동기화 상태, 앱 정보.
 class SettingsScreen extends ConsumerWidget {
@@ -22,25 +25,40 @@ class SettingsScreen extends ConsumerWidget {
     const categories = _CategoriesCard();
     const general = _GeneralCard();
     const storage = _StorageCard();
+    const look = ThemeCard();
+    const manage = ManageLinksCard();
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Text('설정', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 12),
+          const UpdateBanner(),
           if (wide)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
-                    children: [accounts, SizedBox(height: 16), general],
+                    children: [
+                      accounts,
+                      SizedBox(height: 16),
+                      general,
+                      SizedBox(height: 16),
+                      look,
+                    ],
                   ),
                 ),
                 SizedBox(width: 16),
                 Expanded(
                   child: Column(
-                    children: [categories, SizedBox(height: 16), storage],
+                    children: [
+                      categories,
+                      SizedBox(height: 16),
+                      manage,
+                      SizedBox(height: 16),
+                      storage,
+                    ],
                   ),
                 ),
               ],
@@ -51,6 +69,10 @@ class SettingsScreen extends ConsumerWidget {
             categories,
             SizedBox(height: 12),
             general,
+            SizedBox(height: 12),
+            look,
+            SizedBox(height: 12),
+            manage,
             SizedBox(height: 12),
             storage,
           ],

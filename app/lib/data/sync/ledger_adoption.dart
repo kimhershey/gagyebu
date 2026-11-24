@@ -174,6 +174,11 @@ class LedgerAdoption {
     await run('delete from profiles where ledger_id = ?', [from]);
     await run('delete from ledgers where id = ?', [from]);
     await run('delete from sync_conflicts where ledger_id = ?', [from]);
+    // 작업 기록은 옮긴 거래를 그대로 가리킨다. 가계부만 바꿔 준다.
+    await run('update input_batches set ledger_id = ? where ledger_id = ?', [
+      into,
+      from,
+    ]);
     await run("delete from sync_state where key like '%:' || ?", [from]);
     return monthStartDay;
   }
@@ -192,6 +197,9 @@ class LedgerAdoption {
       'ledgers',
       'outbox',
       'sync_conflicts',
+      // 작업 기록은 지운 거래를 가리키므로 함께 지운다.
+      'input_batch_items',
+      'input_batches',
     ]) {
       await db.customStatement('delete from $table');
     }

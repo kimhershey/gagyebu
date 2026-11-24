@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../data/db/connection/connection.dart';
 import '../data/db/database.dart';
+import '../data/prefs/device_prefs.dart';
 import '../data/repositories/ledger_repository.dart';
 import '../data/server/server_config.dart';
 import '../data/server/server_connection.dart';
@@ -16,6 +17,7 @@ import 'app.dart';
 import 'providers.dart';
 import 'router.dart';
 import 'sync_controller.dart';
+import 'theme/theme_setting.dart';
 
 /// 로컬 DB를 열고 가계부를 준비한다.
 Future<AppServices> openAppServices() async {
@@ -63,10 +65,13 @@ void registerBundledLicenses() {
 
 /// 준비가 끝날 때까지 기다렸다가 앱을 띄운다.
 class Bootstrap extends StatefulWidget {
-  const Bootstrap({super.key, this.open = openAppServices});
+  const Bootstrap({super.key, this.open = openAppServices, this.prefs});
 
   /// 로컬 DB를 여는 함수. 시험에서 바꿔 끼운다.
   final Future<AppServices> Function() open;
+
+  /// 앱이 뜨기 전에 읽어 둔 기기 설정. 없으면 메모리에만 둔다.
+  final DevicePrefs? prefs;
 
   @override
   State<Bootstrap> createState() => _BootstrapState();
@@ -88,6 +93,10 @@ class _BootstrapState extends State<Bootstrap> {
   /// (웹 엔진은 앱이 주소를 넘겨받은 뒤에는 시작 주소를 '/'로 돌려 버린다.)
   GoRouter? _router;
 
+  /// 기기 설정과 테마. 연결을 다시 열어도 그대로 쓴다.
+  late final DevicePrefs _prefs = widget.prefs ?? MemoryDevicePrefs();
+  late final ThemeController _theme = ThemeController(_prefs);
+
   /// 로그인하지 않아 안내 화면에 머물러야 하는 동안 true. 라우터가 본다.
   final _welcomeGate = ValueNotifier(false);
 
@@ -107,6 +116,7 @@ class _BootstrapState extends State<Bootstrap> {
     _recoveries?.cancel();
     _welcomeGate.dispose();
     _recoveryGate.dispose();
+    _theme.dispose();
     super.dispose();
   }
 
@@ -160,6 +170,7 @@ class _BootstrapState extends State<Bootstrap> {
   Widget build(BuildContext context) {
     if (_takenOver) {
       return _BareScreen(
+        theme: _theme,
         child: _Notice(
           icon: Icons.tab_unselected,
           title: '다른 탭에서 가계부를 열었습니다',
@@ -183,6 +194,8 @@ class _BootstrapState extends State<Bootstrap> {
             key: ObjectKey(services),
             overrides: [
               appServicesProvider.overrideWithValue(services),
+              devicePrefsProvider.overrideWithValue(_prefs),
+              themeControllerProvider.overrideWithValue(_theme),
               appRestartProvider.overrideWithValue(() {
                 if (mounted) setState(_open);
               }),
@@ -207,6 +220,7 @@ class _BootstrapState extends State<Bootstrap> {
         // 웹에서 주소가 '/'로 바뀌어, 주소로 바로 들어온 화면(#/transactions 등)을 잃는다.
         final failure = done && snapshot.hasError ? snapshot.error : null;
         return _BareScreen(
+          theme: _theme,
           child: failure == null
               ? const CircularProgressIndicator()
               : _Notice(
@@ -225,8 +239,9 @@ class _BootstrapState extends State<Bootstrap> {
 
 /// Navigator 없이 그리는 맨 화면.
 class _BareScreen extends StatelessWidget {
-  const _BareScreen({required this.child});
+  const _BareScreen({required this.theme, required this.child});
 
+  final ThemeController theme;
   final Widget child;
 
   @override
@@ -234,9 +249,10 @@ class _BareScreen extends StatelessWidget {
     final view = View.of(context);
     return MediaQuery.fromView(
       view: view,
-      // 앱과 같은 테마를 쓴다. 글꼴을 정해 두지 않으면 웹에서 한글 글꼴을 밖에서 받아 온다.
+      // 앱과 같은 테마(사용자가 고른 것)를 쓴다. 글꼴을 정해 두지 않으면 웹에서 한글 글꼴을
+      // 밖에서 받아 온다.
       child: Theme(
-        data: appTheme(view.platformDispatcher.platformBrightness),
+        data: theme.resolve(view.platformDispatcher.platformBrightness),
         child: Directionality(
           textDirection: TextDirection.ltr,
           // 오류 내용이 길어도 넘치지 않게 스크롤한다.

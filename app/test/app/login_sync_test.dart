@@ -179,6 +179,14 @@ void main() {
     await settle(tester);
   }
 
+  /// 설정 화면의 단추를 누른다. 화면 아래에 있으면 올려서 누른다.
+  Future<void> tapInSettings(WidgetTester tester, String key) async {
+    final button = find.byKey(ValueKey(key));
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+  }
+
   Future<void> openSettings(WidgetTester tester) async {
     await tester.tap(find.text('설정').first);
     await tester.pumpAndSettle();
@@ -229,7 +237,7 @@ void main() {
     expect(find.textContaining('올릴 변경'), findsNothing);
 
     // 로그아웃하면 안내 화면으로 돌아간다. 기기의 가계부는 그대로다.
-    await tester.tap(find.byKey(const ValueKey('sign-out')));
+    await tapInSettings(tester, 'sign-out');
     await settle(tester);
     expect(find.byKey(const ValueKey('welcome-login')), findsOneWidget);
     expect(find.byKey(const ValueKey('sign-out')), findsNothing);
@@ -283,7 +291,7 @@ void main() {
     // '지금 동기화'는 바로 서버를 확인한다.
     final db = opened.last.db;
     expect(await db.select(db.ledgerTransactions).get(), isEmpty);
-    await tester.tap(find.byKey(const ValueKey('sync-now')));
+    await tapInSettings(tester, 'sync-now');
     await settle(tester);
     expect(
       (await db.select(db.ledgerTransactions).get()).single.receiver,
@@ -301,7 +309,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await settle(tester);
     await openSettings(tester);
-    await tester.tap(find.byKey(const ValueKey('sign-out')));
+    await tapInSettings(tester, 'sign-out');
     await settle(tester);
 
     // 다른 사람이 이 기기에서 로그인한다. 지우고 받을지 묻는 설정 화면으로 간다.
@@ -315,7 +323,7 @@ void main() {
       hasLength(1),
     );
 
-    await tester.tap(find.byKey(const ValueKey('replace-local')));
+    await tapInSettings(tester, 'replace-local');
     await settle(tester);
     expect(opened.last.ledgerId, ledgers['user-2']);
     expect(find.text('other@example.com'), findsOneWidget);

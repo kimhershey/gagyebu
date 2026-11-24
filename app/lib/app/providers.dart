@@ -1,12 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../ai/llm/llm_engine.dart';
 import '../core/local_date.dart';
 import '../data/db/database.dart';
 import '../data/repositories/ledger_repository.dart';
 import '../data/server/server_connection.dart';
 import '../domain/month_period.dart';
 import '../domain/month_summary.dart';
+
+export 'engine_providers.dart';
 
 /// 앱이 시작할 때 한 번 준비하는 것들.
 class AppServices {
@@ -65,11 +66,6 @@ final repositoryProvider = Provider<LedgerRepository>(
 final ledgerIdProvider = Provider<String>(
   (ref) => ref.watch(appServicesProvider).ledgerId,
 );
-
-/// 기기 안의 언어 모델. 없으면 규칙만으로 동작한다.
-///
-/// 웹 앱에는 모델이 없다(v1). Windows와 Android는 모델을 내려받은 뒤에 채운다.
-final llmEngineProvider = Provider<LlmEngine?>((ref) => null);
 
 /// 현재 시각. 시험에서 덮어쓴다.
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
