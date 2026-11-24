@@ -2,9 +2,9 @@
 
 문자와 문장으로 적는 가계부다. Windows · Android · 웹에서 같은 화면을 쓰고, 결제 문자와 한 줄 문장을 **기기 안에서** 해석해 거래로 옮긴다. iPhone · iPad · Mac은 웹 앱으로 쓴다.
 
-| 휴대폰 | 검토 카드 | PC |
+| 휴대폰 | 검토함 | PC |
 | --- | --- | --- |
-| ![홈](docs/screenshots/phone-home.png) | ![검토 카드](docs/screenshots/phone-review.png) | ![내역](docs/screenshots/desktop-transactions.png) |
+| ![홈](docs/screenshots/phone-home.png) | ![검토함](docs/screenshots/phone-review.png) | ![내역](docs/screenshots/desktop-transactions.png) |
 
 ## 지금 상태
 
