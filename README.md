@@ -27,8 +27,8 @@ v0.1.0(2026-11-24). 웹 앱은 <https://kimhershey.github.io/gagyebu/>에서 쓴
 | 비밀번호 다시 정하기(메일) | 시험. 메일을 받아 보지는 못했다 |
 | 실시간 신호(다른 기기의 변경을 바로 받기) | 시험(가짜 서버) |
 | Android · Windows 앱 | 빌드. **기기에서 실행해 보지 못했다** |
-| 기기 안의 모델(모르는 형식의 문자 읽기, 월별 총평) | 시험 · 빌드. 모델 카탈로그가 비어 있어 앱에서 내려받을 수 없다 |
-| 이미지 입력(Windows) | 시험 · 빌드 |
+| 기기 안의 모델(모르는 형식의 문자 읽기, 조회, 월별 총평) | 시험 · 빌드 · **실제 모델로 실행(Linux)**. Windows · Android 기기에서는 돌려 보지 못했다 |
+| 이미지 입력(Windows) | 시험 · 빌드 · 실제 모델로 그림 두 장(Linux) |
 | 공유로 받기(Android), 업데이트 알림 | 시험 · 빌드 |
 
 찾은 오류와 남은 문제, 확인하지 못한 것은 [docs/ERRORS.md](docs/ERRORS.md)에 있다.
@@ -53,11 +53,45 @@ supabase/            서버 SQL과 시험, 동기화 규약 (supabase/README.md)
 catalog/             앱이 읽는 공개 파일: 모델 카탈로그(models.json), 최신 버전(version.json)
 installer/           Windows 설치 파일 스크립트(Inno Setup)
 eval/                골든 세트 · 홀드아웃 표본, 생성 스크립트, 실측 기록
-docs/                설계서(SPEC.md), 오류 기록(ERRORS.md), 개인정보 처리방침(PRIVACY.md), 화면
+docs/                설계서(SPEC.md), 모델 설치 · 로드(MODELS.md), 오류 기록(ERRORS.md), 개인정보 처리방침(PRIVACY.md), 화면
 .github/workflows/   ci.yml(시험 · 서버 SQL · 빌드 · 웹 배포), release.yml(태그로 릴리스), backup.yml(백업)
 ```
 
 설계 전체와 파일 구조는 [docs/SPEC.md](docs/SPEC.md)에 있다.
+
+## AI 모델
+
+결제 문자와 한 줄 문장은 **규칙**이 읽는다. 모델은 규칙이 못 읽은 것만 맡고, 모델이 읽은 것은 모두 사용자가 확인한 뒤에 저장된다. 모델은 Windows · Android 앱에서만 쓰고, 웹은 규칙만으로 돈다.
+
+| | 웹 | Android 앱 | Windows 앱 |
+| --- | --- | --- | --- |
+| 결제 문자 · 한 줄 문장(규칙) | 됨 | 됨 | 됨 |
+| 모르는 형식의 문자, 조회, 월별 총평을 모델로 | — | 메모리 6GB 이상 | 됨 |
+| 이미지(거래내역 화면 · 영수증) 읽기 | — | — | 메모리 8GB 이상 |
+
+```
+                    ┌──────────────────────── 설치 ────────────────────────┐
+catalog/models.json ─▶ 카탈로그 읽기 ─▶ 기기 사양으로 권하기 ─▶ 내려받기 · 해시 확인 ─▶ model_files 표
+                       model_catalog      model_tier             model_manager          (로컬 DB)
+                                                                                            │
+                    ┌──────────────────────── 로드 ────────────────────────┐                ▼
+입력창 · 조회 · 통계 ─▶ llmEngineProvider ─────▶ LocalModelEngine ─▶ LlamadartRuntime ─▶ llama.cpp
+이미지 입력 ─────────▶ visionEngineProvider ──▶  (줄 세우기, 쉬면 내림)  (올리기, 상태 저장)
+                          ▲
+설정의 "모델 서버 주소" ──┘ 적어 두면 그 서버(OpenAI 호환)에 묻는다
+```
+
+| 어디 | 무엇 |
+| --- | --- |
+| `catalog/models.json` (+ `app/assets/catalog/`의 사본) | 받을 수 있는 모델: 주소 · 크기 · 해시 · 필요한 메모리 |
+| `app/lib/ai/llm/model_*.dart` | 설치: 카탈로그, 권하기, 내려받기 · 이어받기 · 해시 확인 |
+| `app/lib/ai/llm/local_model_*.dart`, `llamadart_runtime.dart` | 로드: 처음 쓸 때 올리고, 5분 쉬면 내린다 |
+| `app/lib/app/engine_providers.dart` | 지금 쓸 엔진 고르기 |
+| `app/lib/ai/llm/llm_text_parser.dart`, `ai/query/llm_query_parser.dart`, `ai/llm/narrative_writer.dart`, `ai/vision/vision_text_parser.dart` | 모델을 부르는 네 곳: 질문 만들기 → 형식 묶기 → 답 검증 → 한 번 다시 묻기 |
+| `app/lib/features/models/` | 설정 → AI 모델 화면 |
+| `app/tool/llm_eval.dart`, `query_eval.dart`, `narrative_eval.dart`, `vision_eval.dart`, `model_fetch.dart` | 실제 모델로 재고 받아 보는 도구 |
+
+모델을 더하거나 바꿀 때는 카탈로그 두 곳을 고치고(주소는 특정 판에 고정, 해시는 직접 계산), 도구로 받아 보고 돌려 본 뒤 올린다. `main`의 카탈로그를 고치면 설치된 앱에 바로 반영된다. 순서와 설치 · 로드의 자세한 동작은 [docs/MODELS.md](docs/MODELS.md), 잰 수치는 [eval/README.md](eval/README.md)에 있다.
 
 ## 개발
 

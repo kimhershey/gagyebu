@@ -269,6 +269,8 @@ abstract interface class LlmEngine {
 
 ### 5.4 기기 안의 모델 [구현됨 · 기기에서 확인 필요]
 
+설치와 로드의 자세한 동작, 모델을 더하는 절차는 [MODELS.md](MODELS.md)에 있다. 실제 모델(Qwen3.5-2B · 4B)로 Linux에서 돌려 봤고, Windows · Android 기기에서는 돌려 보지 못했다.
+
 | 항목 | 정한 것 |
 | --- | --- |
 | 런타임 | `llama.cpp` + `llamadart`(MIT). 버전을 고정한다. Android는 CPU, Windows는 Vulkan(실패하면 CPU) |
@@ -315,7 +317,7 @@ abstract interface class LlmEngine {
 - 추론은 별도 격리 영역(isolate)에서 돌고 취소할 수 있다. 검토함은 건마다 진행을 보여 준다.
 - 끝 기준: 가짜 HTTP로 이어받기 · 해시 불일치 · 공간 부족 시험, 등급 고르기 시험, 엔진이 없을 때 규칙만으로 동작하는 시험. 실제 추론 속도와 메모리는 기기에서 확인한다.
 
-### 5.5 이미지 입력 [예정, Windows]
+### 5.5 이미지 입력 [구현됨 · 기기에서 확인 필요, Windows]
 
 ```dart
 abstract interface class VisionEngine {
@@ -815,8 +817,8 @@ lib/
 **기기에서 확인해야 하는 것**(이 저장소의 시험과 CI로는 알 수 없다)
 
 - Android · Windows 앱의 실제 동작 전반(빌드만 확인한다)
-- 기기 안의 모델: 내려받기, 추론 속도와 메모리, 정확도
-- 이미지 입력의 정확도와 시간
+- 기기 안의 모델을 기기에서 쓰는 것: 화면에서 내려받기, Windows의 Vulkan 가속, 휴대폰의 속도와 메모리(Linux에서는 실제 모델로 돌려 봤다)
+- 이미지 입력을 실제 은행 앱 화면과 영수증 사진으로
 - 앱에서의 Google 로그인 왕복, 공유 수신
 - 실시간 신호로 두 기기가 5초 안에 맞춰지는지
 - iPhone Safari에서 키보드가 올라올 때 입력창이 가려지는지, 한글 입력
@@ -830,7 +832,6 @@ lib/
 | 메일 서버(SMTP) 연결(여러 사람에게 메일을 보내려면) | Supabase → Authentication → Emails |
 | APK 서명 키 | 저장소 Settings → Secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` |
 | 백업 · 정리 작업 | 저장소 Secrets: `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE` |
-| 모델 파일의 주소와 해시 확인 | `catalog/models.json` |
 
 **알려진 한계**
 
@@ -862,4 +863,8 @@ lib/
 | 넓은 화면의 상태 줄 | 로그인했으면 "동기화됨" · "동기화하지 못함"을, 아니면 "이 기기에 저장됨"을 보여 준다 |
 | 생체 인증 | 만들지 않았다. 자리(`biometricAuthProvider`)만 있고 화면에는 나오지 않는다 |
 | 드래그 앤 드롭 | `desktop_drop`은 0.8.0에 묶어 둔다. 0.8.1부터는 Linux 쪽에서 MPL 라이선스인 `dbus`를 끌어온다 |
-| 모델 카탈로그 | `catalog/models.json`의 네 항목은 주소 · 크기 · 해시가 비어 있다. 채우기 전에는 앱에서 내려받을 수 없고, 로컬 서버 주소를 적는 방식만 쓸 수 있다 |
+| 모델 카탈로그 | `catalog/models.json`의 네 항목을 채웠다. 모델 저장소(`unsloth/Qwen3.5-2B-GGUF`, `unsloth/Qwen3.5-4B-GGUF`)의 특정 판에 고정한 주소와, 직접 계산한 크기 · 해시다 |
+| 시스템 글 재사용 | Qwen3.5는 llama.cpp의 앞부분 재사용이 안 되는 구조라, 런타임이 시스템 글까지 읽은 상태를 임시 파일에 두고 요청마다 불러온다. 한 건이 25초에서 8초로 줄었다 |
+| 조회의 지시문 | 분류를 말하지 않은 물음에는 분류를 붙이지 않게 했다 |
+| 총평의 검증 | 숫자 말고도 가게를 분류라고 한 글, 날수를 날짜로 쓴 글을 걸러 낸다. 숫자와 단위 사이의 공백을 다듬는다. 쓴 돈이 없는 달은 모델에 묻지 않는다 |
+| 평가 도구 | `tool/llm_eval.dart --model=`(앱 안의 런타임), `query_eval` · `narrative_eval` · `vision_eval` · `model_fetch`, 런타임 통합 시험(`test/integration/`) |

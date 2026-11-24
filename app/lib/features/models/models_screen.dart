@@ -113,8 +113,8 @@ class _WebNotice extends StatelessWidget {
       key: const ValueKey('models-web-notice'),
       title: '웹 앱에는 기기 안의 모델이 없습니다',
       child: Text(
-        '결제 문자와 한 줄 문장은 규칙으로 읽습니다. 규칙이 모르는 형식의 문자와 '
-        '이미지는 Windows · Android 앱에서 읽을 수 있습니다.',
+        '결제 문자와 한 줄 문장은 규칙으로 읽습니다. 규칙이 모르는 형식의 문자는 '
+        'Windows · Android 앱에서, 이미지는 Windows 앱에서 읽을 수 있습니다.',
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
