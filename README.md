@@ -8,7 +8,7 @@
 
 ## 지금 상태
 
-v0.1.0(2026-11-24). 웹 앱은 <https://kimhershey.github.io/gagyebu/>에서 쓴다. Android APK와 Windows 설치 파일은 [Releases](https://github.com/kimhershey/gagyebu/releases)에 있다.
+v0.1.0(2026-11-24). 웹 앱은 <https://kimhershey.github.io/gagyebu/>에서 쓴다. Android APK와 Windows 설치 파일은 릴리스 태그를 올리면 [Releases](https://github.com/kimhershey/gagyebu/releases)에 올라간다(아래 "릴리스").
 
 "확인"은 세 가지로 가른다. **화면**은 웹 빌드를 실제 서버에 이어 눌러 본 것, **시험**은 자동 시험만 통과한 것, **빌드**는 CI에서 빌드만 된 것이다.
 
