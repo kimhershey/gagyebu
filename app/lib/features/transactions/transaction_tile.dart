@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../app/providers.dart';
+import '../common/summary_parts.dart';
+
+// 분류의 자리 · 색 · 아이콘은 홈 · 통계와 같은 것을 쓴다.
+export '../common/summary_parts.dart'
+    show CategoryVisual, categoryVisualsOf, categoryVisualsProvider;
+
 import '../../app/theme/tokens.dart';
 import '../../core/formatters.dart';
-import '../../data/db/database.dart';
 import '../../data/repositories/ledger_repository.dart';
 import '../../domain/enums.dart';
-import '../common/category_visual.dart';
 
 /// 금액을 종류에 맞는 색과 부호로 그린다.
 class AmountText extends StatelessWidget {
@@ -58,46 +61,6 @@ String transactionSubtitle(TransactionView view) {
 /// 확인이 더 필요한 거래인지.
 bool needsReview(TransactionView view) =>
     view.row.status == TxStatus.needsReview;
-
-/// 분류의 색과 아이콘을 정하는 데 필요한 것.
-class CategoryVisual {
-  const CategoryVisual({required this.index, required this.category});
-
-  /// 그 종류의 분류를 `sort_order`로 늘어놓았을 때의 자리(0부터). 색을 고른다.
-  final int index;
-  final CategoryRow category;
-
-  Color color(AppTokens tokens) => categoryColor(tokens, index);
-
-  IconData get icon => categoryIcon(category.name, category.icon);
-}
-
-/// 분류 ID → 색과 아이콘.
-final categoryVisualsProvider = Provider<Map<String, CategoryVisual>>((ref) {
-  final categories =
-      ref.watch(categoriesProvider).value ?? const <CategoryRow>[];
-  return categoryVisualsOf(categories);
-});
-
-/// [categories]의 분류마다 자리를 매긴다. 자리는 종류(지출 · 수입)별로 따로 센다.
-Map<String, CategoryVisual> categoryVisualsOf(List<CategoryRow> categories) {
-  final visuals = <String, CategoryVisual>{};
-  for (final kind in CategoryKind.values) {
-    final sorted = [
-      for (final c in categories)
-        if (c.kind == kind) c,
-    ];
-    // 순서가 같은 분류의 자리가 기기마다 달라지지 않게 ID로 한 번 더 가른다.
-    sorted.sort((a, b) {
-      final order = a.sortOrder.compareTo(b.sortOrder);
-      return order != 0 ? order : a.id.compareTo(b.id);
-    });
-    for (var i = 0; i < sorted.length; i++) {
-      visuals[sorted[i].id] = CategoryVisual(index: i, category: sorted[i]);
-    }
-  }
-  return visuals;
-}
 
 /// 분류의 색 점. 분류가 없으면 흐린 점을 찍는다.
 class CategoryDot extends ConsumerWidget {
