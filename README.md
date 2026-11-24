@@ -41,11 +41,11 @@ app/                 Flutter 앱 (lib/, test/, tool/, android/, windows/, web/)
   tool/              웹 빌드 준비, 라이선스 검사, 해석 평가(llm_eval)
 supabase/            서버 SQL과 시험, 동기화 규약 (supabase/README.md)
 eval/                골든 세트 · 홀드아웃 표본, 생성 스크립트, 실측 기록
-docs/                설계 요약(DESIGN.md), 화면
+docs/                설계서(SPEC.md), 화면
 .github/workflows/   시험, 서버 SQL 검증, Windows · Android · 웹 빌드, 웹 배포
 ```
 
-설계 전체와 파일별 설명은 [docs/DESIGN.md](docs/DESIGN.md)에 있다.
+설계 전체와 파일 구조는 [docs/SPEC.md](docs/SPEC.md)에 있다.
 
 ## 개발
 
