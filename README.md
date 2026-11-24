@@ -131,7 +131,9 @@ git tag -a v0.2.0 -m "예산 화면을 더했습니다."
 git push origin v0.2.0
 ```
 
-`v*` 태그가 올라가면 `.github/workflows/release.yml`이 다음을 한다.
+태그를 올릴 수 없는 환경이면 GitHub 화면에서 돌린다. 저장소의 **Actions → 릴리스 → Run workflow**를 누르고, 브랜치는 `main`으로 둔 채 업데이트 안내에 보일 한 줄을 적어 **Run workflow**를 누른다. 태그 이름은 `app/pubspec.yaml`의 `version`에서 정해지고(`0.1.0+1` → `v0.1.0`), 릴리스를 만들면서 태그도 함께 만들어진다. 같은 버전의 태그가 이미 있으면 멈춘다.
+
+`v*` 태그가 올라가거나 위처럼 손으로 돌리면 `.github/workflows/release.yml`이 다음을 한다.
 
 1. 태그와 `pubspec.yaml`의 버전이 같은지 본다. 다르면 멈춘다.
 2. Android APK(`gagyebu-android-arm64.apk`)와 Windows 설치 파일(`gagyebu-setup.exe`, `installer/`)을 CI와 같은 방법으로 빌드한다.

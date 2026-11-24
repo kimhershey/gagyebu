@@ -6,10 +6,19 @@ name: 릴리스
 # 빌드 방법(Flutter 버전, 서버 주소 넣기, 서명)은 ci.yml과 같게 둔다. 한쪽을 고치면 다른 쪽도 고친다.
 # 태그는 app/pubspec.yaml의 version과 같아야 한다(v0.1.0 ↔ 0.1.0+1). 다르면 처음 작업에서 멈춘다.
 # 태그에 '-'가 들어 있으면(v0.2.0-beta.1) 시험판으로 올리고 version.json은 건드리지 않는다.
+#
+# 태그를 올릴 수 없으면 Actions 화면에서 이 작업을 손으로 돌린다(Run workflow, 브랜치는 main).
+# 그때는 app/pubspec.yaml의 version으로 태그 이름을 정하고, 릴리스를 만들면서 태그도 함께 만든다.
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: '앱의 업데이트 안내에 보일 한 줄'
+        required: false
+        default: '새 버전입니다.'
 
 concurrency:
   group: release-${{ github.ref }}
@@ -31,6 +40,7 @@ jobs:
     name: 버전 확인
     runs-on: ubuntu-latest
     outputs:
+      tag: ${{ steps.version.outputs.tag }}
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
@@ -40,7 +50,20 @@ jobs:
       - id: version
         name: 태그와 pubspec.yaml의 버전 맞춰 보기
         run: |
-          tag="$GITHUB_REF_NAME"
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            # 손으로 돌렸다. main에서만 받고, 태그 이름은 앱의 버전에서 정한다.
+            if [ "$GITHUB_REF" != refs/heads/main ]; then
+              echo "::error title=main에서 돌려야 한다::Run workflow에서 브랜치를 main으로 고른다. 받은 것: $GITHUB_REF"
+              exit 1
+            fi
+            tag="v$(sed -n 's/^version:[[:space:]]*\([^+[:space:]]*\).*/\1/p' app/pubspec.yaml)"
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null 2>&1; then
+              echo "::error title=이미 있는 버전이다::태그 $tag 가 이미 있다. app/pubspec.yaml의 version을 올려 커밋한 뒤 다시 돌린다."
+              exit 1
+            fi
+          else
+            tag="$GITHUB_REF_NAME"
+          fi
           version="${tag#v}"
           if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
             echo "::error title=태그 이름이 버전 꼴이 아니다::v1.2.3 또는 v1.2.3-beta.1 꼴이어야 한다. 받은 태그: $tag"
@@ -55,6 +78,7 @@ jobs:
             *-*) prerelease=true ;;
             *) prerelease=false ;;
           esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
           echo "버전 $version (시험판: $prerelease)"
@@ -195,17 +219,24 @@ jobs:
       - name: 릴리스 만들기
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
-          tag="$GITHUB_REF_NAME"
+          tag="$TAG"
           ls -l dist
           files="dist/gagyebu-android-arm64.apk dist/gagyebu-setup.exe"
+          # 태그로 시작했으면 그 태그가 있는지 확인하고, 손으로 돌렸으면 빌드한 커밋에 태그를 만든다.
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            at="--target $GITHUB_SHA"
+          else
+            at="--verify-tag"
+          fi
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             gh release upload "$tag" $files --repo "$GITHUB_REPOSITORY" --clobber
           elif [ "$PRERELEASE" = true ]; then
-            gh release create "$tag" $files --repo "$GITHUB_REPOSITORY" --title "가계부 $tag" --generate-notes --verify-tag --prerelease
+            gh release create "$tag" $files --repo "$GITHUB_REPOSITORY" --title "가계부 $tag" --generate-notes $at --prerelease
           else
-            gh release create "$tag" $files --repo "$GITHUB_REPOSITORY" --title "가계부 $tag" --generate-notes --verify-tag
+            gh release create "$tag" $files --repo "$GITHUB_REPOSITORY" --title "가계부 $tag" --generate-notes $at
           fi
 
   # 릴리스가 올라간 뒤에만 고친다. 먼저 고치면 앱이 아직 없는 파일의 주소를 안내하게 된다.
@@ -223,14 +254,21 @@ jobs:
       - name: catalog/version.json을 이 태그로 고쳐 main에 커밋
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
+          TAG_NAME: ${{ needs.prepare.outputs.tag }}
+          NOTES_INPUT: ${{ inputs.notes }}
         run: |
-          tag="$GITHUB_REF_NAME"
+          tag="$TAG_NAME"
 
-          # notes는 주석 달린 태그(git tag -a)의 첫 줄에서 가져온다. 주석이 없는 태그면 비운다.
-          git fetch --depth=1 --force --no-tags origin "+refs/tags/$tag:refs/tags/$tag"
-          notes=""
-          if [ "$(git cat-file -t "refs/tags/$tag")" = tag ]; then
-            notes=$(git for-each-ref --format='%(contents:subject)' "refs/tags/$tag")
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            # 손으로 돌렸다. 안내 글은 돌릴 때 적은 한 줄이다.
+            notes="$NOTES_INPUT"
+          else
+            # notes는 주석 달린 태그(git tag -a)의 첫 줄에서 가져온다. 주석이 없는 태그면 비운다.
+            git fetch --depth=1 --force --no-tags origin "+refs/tags/$tag:refs/tags/$tag"
+            notes=""
+            if [ "$(git cat-file -t "refs/tags/$tag")" = tag ]; then
+              notes=$(git for-each-ref --format='%(contents:subject)' "refs/tags/$tag")
+            fi
           fi
 
           TAG="$tag" NOTES="$notes" python3 - <<'PY'

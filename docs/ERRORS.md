@@ -75,7 +75,7 @@ Android · Windows 앱은 **빌드가 되는 것까지만** 확인했다. 기기
 | E | 메일(비밀번호 다시 정하기)은 Supabase의 기본 메일 서버로 나간다 | 시간당 몇 통만 보낼 수 있다 | 여러 사람이 쓰려면 Supabase → Authentication → Emails에서 SMTP를 잇는다 |
 | F | 접근성 모드를 켠 브라우저의 콘솔에 "Null check operator used on a null value"가 찍힐 때가 있다 | 화면 동작에는 영향이 없다. Flutter 웹 엔진의 글 입력 접근성 코드에서 난다 | Flutter를 올릴 때 다시 본다 |
 | G | 예산이 얼마나 찼는지를 홈과 예산 화면이 각자 계산한다 | 지금은 식이 같다. 한쪽만 고치면 숫자가 달라질 수 있다 | 하나로 합친다 |
-| H | **릴리스 태그(`v0.1.0`)를 올리지 못했다.** 자동 작업 환경은 브랜치만 올릴 수 있고 태그는 막혀 있다(git 푸시 403, GitHub API는 권한 거부) | `main`과 웹 배포는 끝났지만 Releases에 APK와 Windows 설치 파일이 아직 없다 | 저장소 주인이 자기 컴퓨터에서 태그를 올린다: `git fetch origin main` → `git tag -a v0.1.0 -m "첫 버전입니다." origin/main` → `git push origin v0.1.0`. 올리면 `release.yml`이 나머지를 한다 |
+| H | **릴리스 태그(`v0.1.0`)를 올리지 못했다.** 자동 작업 환경은 브랜치만 올릴 수 있고 태그는 막혀 있다(git 푸시도, GitHub API로 만드는 것도 프록시가 403으로 거절한다) | `main`과 웹 배포는 끝났지만 Releases에 APK와 Windows 설치 파일이 아직 없다 | 릴리스 작업을 손으로 돌릴 수 있게 고쳤다. 저장소의 **Actions → 릴리스 → Run workflow**(브랜치 `main`)를 누르면 태그까지 만들어진다. 또는 자기 컴퓨터에서 `git tag -a v0.1.0 -m "첫 버전입니다." origin/main` → `git push origin v0.1.0`. 손으로 돌리는 길은 아직 한 번도 실제로 돌려 보지 못했다 |
 
 설계에서 일부러 정한 한계(충돌은 행 단위, 카드 결제 예정액은 어림, 앱 잠금은 화면만 가림, 브라우저가 저장소를 지울 수 있음)는 [설계서 10장](SPEC.md)에 있다.
 
