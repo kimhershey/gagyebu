@@ -1,7 +1,7 @@
 {
-  "latest": "0.1.0",
+  "latest": "0.1.1",
   "min": "0.1.0",
-  "notes": "첫 버전입니다.",
-  "android": "https://github.com/kimhershey/gagyebu/releases/download/v0.1.0/gagyebu-android-arm64.apk",
-  "windows": "https://github.com/kimhershey/gagyebu/releases/download/v0.1.0/gagyebu-setup.exe"
+  "notes": "기기 안의 모델을 내려받을 수 있고, 읽는 속도가 빨라졌습니다.",
+  "android": "https://github.com/kimhershey/gagyebu/releases/download/v0.1.1/gagyebu-android-arm64.apk",
+  "windows": "https://github.com/kimhershey/gagyebu/releases/download/v0.1.1/gagyebu-setup.exe"
 }
