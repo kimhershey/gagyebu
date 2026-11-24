@@ -3,6 +3,12 @@
 //   dart run tool/llm_eval.dart --mode=rules --set=holdout
 //   dart run tool/llm_eval.dart --endpoint=http://127.0.0.1:8088 --name=qwen3.5-2b-q4_k_m
 //   dart run tool/llm_eval.dart --endpoint=… --name=… --mode=app --set=holdout --out=x.json
+//   dart run tool/llm_eval.dart --model=/경로/Qwen3.5-2B-Q4_K_M.gguf --set=holdout
+//
+// 모델을 쓰는 길은 둘이다.
+//   --endpoint + --name  이 컴퓨터에 띄운 모델 서버(OpenAI 호환)에 묻는다.
+//   --model=<GGUF 경로>  앱이 쓰는 것과 같은 런타임(llama.cpp, `LocalModelEngine`)에 파일을
+//                        직접 올려 묻는다. 앱 안에서 도는 길을 그대로 잰다.
 //
 // --mode
 //   llm    형식 규칙을 끄고 모델만으로 읽는다(기본). 규칙이 모르는 금융사의 문자를 모델이
@@ -20,7 +26,11 @@ import 'dart:io';
 
 import 'package:gagyebu/ai/input_interpreter.dart';
 import 'package:gagyebu/ai/llm/extraction_prompt.dart';
+import 'package:gagyebu/ai/llm/llm_engine.dart';
 import 'package:gagyebu/ai/llm/llm_text_parser.dart';
+import 'package:gagyebu/ai/llm/local_model_engine.dart';
+import 'package:gagyebu/ai/llm/local_model_runtime.dart';
+import 'package:gagyebu/ai/llm/local_model_runtime_factory.dart';
 import 'package:gagyebu/ai/llm/openai_compatible_engine.dart';
 import 'package:gagyebu/ai/parsed_transaction.dart';
 import 'package:gagyebu/core/local_date.dart';
@@ -227,13 +237,16 @@ Future<_Score> _evalSentences(String file, _Reader read, int? limit) async {
 Future<void> main(List<String> args) async {
   final mode = _arg(args, 'mode') ?? 'llm';
   final endpoint = _arg(args, 'endpoint');
-  final name = _arg(args, 'name');
+  final modelPath = _arg(args, 'model');
+  final name =
+      _arg(args, 'name') ??
+      modelPath?.split('/').last.replaceAll('.gguf', '').toLowerCase();
   final needsModel = mode != 'rules';
-  if (!{'llm', 'rules', 'app'}.contains(mode) ||
-      (needsModel && (endpoint == null || name == null))) {
+  final hasModel = modelPath != null || (endpoint != null && name != null);
+  if (!{'llm', 'rules', 'app'}.contains(mode) || (needsModel && !hasModel)) {
     stderr.writeln(
       '사용법: dart run tool/llm_eval.dart [--mode=llm|rules|app] '
-      '[--endpoint=http://127.0.0.1:8088 --name=<모델 이름>] '
+      '[--endpoint=http://127.0.0.1:8088 --name=<모델 이름> | --model=<GGUF 경로>] '
       '[--set=paste|sentences|all|holdout] [--limit=N] [--out=파일]',
     );
     exit(2);
@@ -242,9 +255,20 @@ Future<void> main(List<String> args) async {
   final limit = int.tryParse(_arg(args, 'limit') ?? '');
   final out = _arg(args, 'out');
 
-  final engine = needsModel
-      ? OpenAiCompatibleEngine(endpoint: Uri.parse(endpoint!), modelName: name!)
-      : null;
+  LocalModelEngine? local;
+  OpenAiCompatibleEngine? server;
+  if (needsModel && modelPath != null) {
+    local = LocalModelEngine(
+      spec: LocalModelSpec(name: name!, modelPath: modelPath),
+      runtimeFactory: createLocalModelRuntime,
+    );
+  } else if (needsModel) {
+    server = OpenAiCompatibleEngine(
+      endpoint: Uri.parse(endpoint!),
+      modelName: name!,
+    );
+  }
+  final LlmEngine? engine = local ?? server;
 
   final _Reader read;
   if (mode == 'llm') {
@@ -285,6 +309,7 @@ Future<void> main(List<String> args) async {
     'model': name,
     'prompt': needsModel ? extractionPromptVersion : null,
     'endpoint': endpoint,
+    'runtime': local != null ? 'llamadart(앱 안의 런타임)' : null,
   };
 
   final holdout = which == 'holdout';
@@ -301,7 +326,8 @@ Future<void> main(List<String> args) async {
     report[holdout ? 'holdout_sentences' : 'sentences'] = score.toJson();
   }
 
-  engine?.close();
+  server?.close();
+  await local?.dispose();
   if (out != null) {
     File(out)
       ..createSync(recursive: true)
