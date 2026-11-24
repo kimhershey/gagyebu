@@ -13,6 +13,9 @@ import '../data/repositories/ledger_repository.dart';
 import '../data/server/server_config.dart';
 import '../data/server/server_connection.dart';
 import '../data/server/supabase_connection.dart';
+import '../features/composer/composer_state.dart';
+import '../platform/share_receiver.dart';
+import '../platform/update_checker.dart';
 import 'app.dart';
 import 'providers.dart';
 import 'router.dart';
@@ -65,13 +68,21 @@ void registerBundledLicenses() {
 
 /// 준비가 끝날 때까지 기다렸다가 앱을 띄운다.
 class Bootstrap extends StatefulWidget {
-  const Bootstrap({super.key, this.open = openAppServices, this.prefs});
+  const Bootstrap({
+    super.key,
+    this.open = openAppServices,
+    this.prefs,
+    this.shares,
+  });
 
   /// 로컬 DB를 여는 함수. 시험에서 바꿔 끼운다.
   final Future<AppServices> Function() open;
 
   /// 앱이 뜨기 전에 읽어 둔 기기 설정. 없으면 메모리에만 둔다.
   final DevicePrefs? prefs;
+
+  /// 다른 앱의 "공유"로 글을 받는 곳. 없으면 이 기기의 것을 쓴다. 시험에서 바꿔 끼운다.
+  final ShareReceiver? shares;
 
   @override
   State<Bootstrap> createState() => _BootstrapState();
@@ -104,14 +115,32 @@ class _BootstrapState extends State<Bootstrap> {
   final _recoveryGate = ValueNotifier(false);
   StreamSubscription<bool>? _recoveries;
 
+  /// 다른 앱의 "공유"로 받은 글(`docs/SPEC.md` 7.18). 연결을 다시 열어도 그대로 듣는다.
+  late final ShareReceiver _shareReceiver = widget.shares ?? ShareReceiver();
+  StreamSubscription<String>? _shares;
+
+  /// 받았지만 아직 입력창에 넣지 못한 글. 로그인 전이거나 가계부를 맞추는 중이면 들고 있는다.
+  String? _pendingShare;
+  bool _shareScheduled = false;
+
+  /// 지금 화면이 쓰는 제공자들. 화면이 내려가 있는 동안에는 null이다.
+  ProviderContainer? _scope;
+
   @override
   void initState() {
     super.initState();
     _open();
+    // 앱을 띄운 공유도 여기로 온다. 앱이 준비되면 입력창에 넣는다.
+    _shares = _shareReceiver.texts.listen((text) {
+      _pendingShare = text;
+      _deliverShare();
+    });
   }
 
   @override
   void dispose() {
+    _shares?.cancel();
+    if (widget.shares == null) _shareReceiver.dispose();
     _router?.dispose();
     _recoveries?.cancel();
     _welcomeGate.dispose();
@@ -125,6 +154,7 @@ class _BootstrapState extends State<Bootstrap> {
     _takenOver = false;
     final previous = _current;
     _current = null;
+    _scope = null;
     final services = _services = () async {
       if (previous != null) {
         // 다시 여는 경우다. 화면이 내려간 다음에 앞선 연결을 닫고 새로 연다.
@@ -146,6 +176,7 @@ class _BootstrapState extends State<Bootstrap> {
       services.takenOver?.then((_) {
         if (!mounted || opened != _opened) return;
         _current = null;
+        _scope = null;
         setState(() => _takenOver = true);
         // 화면이 내려간 다음에 닫는다. 이 탭이 오래된 사본으로 다시 저장하지 못하게 한다.
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -164,6 +195,61 @@ class _BootstrapState extends State<Bootstrap> {
       // 이 기기에 다른 계정의 가계부가 있다. 지우고 받을지 묻는 곳으로 보낸다.
       _router?.go('/settings');
     }
+    _deliverShare();
+  }
+
+  /// 공유로 받은 글을 입력창에 넣어도 되는 때인지.
+  bool _canDeliverShare() {
+    final scope = _scope;
+    final router = _router;
+    if (!mounted || scope == null || router == null || _current == null) {
+      return false;
+    }
+    final status = scope.read(syncControllerProvider);
+    final settled = switch (status.phase) {
+      // 서버가 없는 빌드이거나, 로그인해 가계부를 맞췄다. 서버에 닿지 못해 실패한 동안에도
+      // 기기 안에서는 쓸 수 있으므로 넣는다.
+      SyncPhase.unavailable || SyncPhase.idle || SyncPhase.failed => true,
+      // 가계부를 맞추는 중이면 기다린다. 가계부가 바뀌면 앱이 다시 열려 입력창이 비워진다.
+      SyncPhase.syncing =>
+        scope.read(syncControllerProvider.notifier).ledgerReady,
+      SyncPhase.signedOut || SyncPhase.differentAccount => false,
+    };
+    if (!settled) return false;
+    // 입력창은 뼈대 안에 있다. 로그인 안내나 새 비밀번호 화면에 있는 동안에는 없다.
+    final matches = router.routerDelegate.currentConfiguration.matches;
+    return matches.isNotEmpty && matches.first is ShellRouteMatch;
+  }
+
+  /// 들고 있는 글이 있고 넣어도 되는 때면 입력창에 넣는다. 아니면 다음 기회를 기다린다
+  /// (로그인 상태나 화면이 바뀔 때마다 다시 불린다).
+  void _deliverShare() {
+    if (_pendingShare == null || _shareScheduled || !_canDeliverShare()) return;
+    _shareScheduled = true;
+    // 입력창이 그려진 다음에 넣는다. 입력창은 그려진 뒤에 올라온 글만 가져간다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _shareScheduled = false;
+      if (!mounted) return;
+      final text = _pendingShare;
+      if (text == null) return;
+      if (!_canDeliverShare()) {
+        // 그사이 화면이 바뀌었다(가계부가 바뀌어 다시 여는 중 등). 다음 기회에 넣는다.
+        return;
+      }
+      _pendingShare = null;
+      _scope!.read(incomingTextProvider.notifier).offer(text);
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  GoRouter _createRouter() {
+    final router = createRouter(
+      welcomeGate: _welcomeGate,
+      recoveryGate: _recoveryGate,
+    );
+    // 뼈대가 있는 화면으로 넘어오면 들고 있던 글을 넣는다.
+    router.routerDelegate.addListener(_deliverShare);
+    return router;
   }
 
   @override
@@ -203,16 +289,16 @@ class _BootstrapState extends State<Bootstrap> {
             // 화면이 떠 있는 동안 로그인 상태를 따라가며 동기화한다.
             child: Consumer(
               builder: (context, ref, child) {
+                _scope = ProviderScope.containerOf(context, listen: false);
                 ref.watch(syncControllerProvider);
                 ref.listen(syncControllerProvider, _onSyncStatus);
+                // 앱을 켤 때 새 버전이 있는지 본다(하루 한 번, Windows · Android).
+                ref.listen(updateInfoProvider, (_, _) {});
+                // 앱이 뜨기 전에 받은 글이 있으면 화면이 그려진 뒤에 넣는다.
+                _deliverShare();
                 return child!;
               },
-              child: GagyebuApp(
-                router: _router ??= createRouter(
-                  welcomeGate: _welcomeGate,
-                  recoveryGate: _recoveryGate,
-                ),
-              ),
+              child: GagyebuApp(router: _router ??= _createRouter()),
             ),
           );
         }

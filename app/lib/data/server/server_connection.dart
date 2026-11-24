@@ -119,6 +119,10 @@ abstract interface class AuthService {
 
   /// 이 기기에서만 로그아웃한다. 기기의 가계부는 지우지 않는다.
   Future<void> signOut();
+
+  /// 로그인한 계정을 서버에서 지운다(가계부의 모든 행과 인증 계정). 되돌릴 수 없다.
+  /// 성공하면 이 기기에서도 로그아웃된다. 기기의 가계부는 여기서 지우지 않는다.
+  Future<void> deleteAccount();
 }
 
 /// 서버 연결 한 벌.
@@ -127,6 +131,7 @@ class ServerConnection {
     required this.auth,
     required this.gateway,
     required this.ledgerIdOf,
+    this.changes,
   });
 
   final AuthService auth;
@@ -134,4 +139,9 @@ class ServerConnection {
 
   /// 사용자의 가계부 ID. 서버가 가입할 때 만들어 둔다. 찾지 못하면 null.
   final Future<String?> Function(String userId) ledgerIdOf;
+
+  /// 가계부에 변경이 생길 때마다 알리는 실시간 신호(`docs/SPEC.md` 4.4). 듣기 시작하면
+  /// 구독하고, 그만 들으면 구독을 끊는다. 신호를 주지 않는 연결이면 null이다(1분 주기의
+  /// 받기만으로 맞춘다).
+  final Stream<void> Function(String ledgerId)? changes;
 }
