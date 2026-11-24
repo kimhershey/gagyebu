@@ -33,6 +33,9 @@ dependencies:
   web: ^1.1.2
   crypto: ^3.0.8
   cp949_codec: ^1.0.2
+  # 기기 안의 모델 런타임(llama.cpp). 네이티브 라이브러리가 함께 바뀌므로 버전을 고정한다.
+  llamadart: 0.20.7
+  device_info_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +50,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/fonts/Pretendard-OFL.txt
+    # 모델 카탈로그의 사본(원본은 저장소의 catalog/models.json). 원본을 읽지 못할 때 쓴다.
+    - assets/catalog/models.json
   # Pretendard(SIL OFL 1.1). 고치지 않은 원본 파일을 그대로 넣는다.
   fonts:
     - family: Pretendard
@@ -64,3 +69,7 @@ hooks:
     sqlite3:
       source:
         linux: system
+    # llamadart의 빌드 훅 설정. GGUF(llama.cpp) 런타임만 앱에 넣는다. 쓰지 않는
+    # LiteRT-LM 런타임은 넣지 않아 앱 크기를 줄인다.
+    llamadart:
+      llamadart_native_runtimes: [llama_cpp]

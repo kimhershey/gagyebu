@@ -228,13 +228,13 @@ $_cardSms
       final services = await createTestServices();
       await pumpApp(tester, services, size: phone);
 
-      await sendFromComposer(tester, '오늘 저녁은 뭐 먹지');
+      await sendFromComposer(tester, '오늘 저녁은 집에서 먹는다');
 
       expect(find.byKey(const ValueKey('composer-unreadable')), findsOneWidget);
       expect(find.textContaining('읽지 못했습니다'), findsOneWidget);
       expect(containerOf(tester).read(reviewSessionProvider), isNull);
       expect(find.byKey(const ValueKey('review-0')), findsNothing);
-      expect(_composerText(tester), '오늘 저녁은 뭐 먹지');
+      expect(_composerText(tester), '오늘 저녁은 집에서 먹는다');
 
       // 직접 입력: 새 거래 칸이 열린다.
       await tester.tap(find.byKey(const ValueKey('composer-manual')));
@@ -248,7 +248,7 @@ $_cardSms
       final services = await createTestServices();
       await pumpApp(tester, services, size: desktop);
 
-      await sendFromComposer(tester, '오늘 저녁은 뭐 먹지');
+      await sendFromComposer(tester, '오늘 저녁은 집에서 먹는다');
       expect(find.byKey(const ValueKey('composer-unreadable')), findsOneWidget);
 
       await tester.enterText(find.byKey(composerInput), '오늘 저녁 2만원');
@@ -417,7 +417,7 @@ $_cardSms
         expect(find.byKey(const ValueKey('composer-chips')), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        await sendFromComposer(tester, '오늘 저녁은 뭐 먹지');
+        await sendFromComposer(tester, '오늘 저녁은 집에서 먹는다');
         expect(
           find.byKey(const ValueKey('composer-unreadable')),
           findsOneWidget,

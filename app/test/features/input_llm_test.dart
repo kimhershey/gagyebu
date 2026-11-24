@@ -248,6 +248,33 @@ void main() {
     final engine = _HeldEngine();
     await _pump(tester, services, engine);
 
+    // 여러 줄이라 규칙으로 대신 읽어 볼 수 없는 글.
+    await tester.enterText(
+      find.byKey(composerInput),
+      '$_unknownSms\n\n$_unknownSms',
+    );
+    await tester.tap(find.byKey(composerSend));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    // 덩어리마다 모델에 묻는다. 모두 실패시킨다.
+    for (var i = 0; i < engine.calls.length; i++) {
+      engine.calls[i].completeError(StateError('모델을 올리지 못했다'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('composer-failed')), findsOneWidget);
+    expect(find.textContaining('모델을 올리지 못했다'), findsNothing);
+    expect(find.byKey(const ValueKey('review-0')), findsNothing);
+    await disposeApp(tester, services);
+  });
+
+  testWidgets('모델이 실패한 한 줄 글은 규칙으로 읽어 검토함에 올린다', (tester) async {
+    final services = await createTestServices();
+    final engine = _HeldEngine();
+    await _pump(tester, services, engine);
+
     await tester.enterText(find.byKey(composerInput), _unknownSms);
     await tester.tap(find.byKey(composerSend));
     await tester.pump();
@@ -255,9 +282,9 @@ void main() {
     engine.calls[0].completeError(StateError('모델을 올리지 못했다'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('composer-failed')), findsOneWidget);
+    expect(find.byKey(const ValueKey('composer-failed')), findsNothing);
     expect(find.textContaining('모델을 올리지 못했다'), findsNothing);
-    expect(find.byKey(const ValueKey('review-0')), findsNothing);
+    expect(find.byKey(const ValueKey('review-0')), findsOneWidget);
     await disposeApp(tester, services);
   });
 }

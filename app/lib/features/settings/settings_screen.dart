@@ -249,6 +249,7 @@ class _InfoCard extends ConsumerWidget {
     final services = ref.watch(appServicesProvider);
     final theme = Theme.of(context);
     final started = services.startedAt?.toLocal();
+    final version = ref.watch(appVersionProvider).value;
     return SectionCard(
       title: '정보',
       child: Column(
@@ -283,6 +284,14 @@ class _InfoCard extends ConsumerWidget {
               ].join('\n'),
             ),
           ),
+          if (version != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: HintText(
+                '버전 $version',
+                key: const ValueKey('app-version'),
+              ),
+            ),
           Wrap(
             spacing: 8,
             runSpacing: 4,

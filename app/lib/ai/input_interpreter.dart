@@ -4,6 +4,7 @@ library;
 import '../core/local_date.dart';
 import 'llm/llm_engine.dart';
 import 'llm/llm_text_parser.dart';
+import 'llm/local_model_engine.dart';
 import 'parsed_transaction.dart';
 import 'text/name_candidates.dart';
 import 'text/paste_parser.dart';
@@ -11,13 +12,21 @@ import 'text/quick_entry_parser.dart';
 
 /// 해석 결과.
 class InterpretedInput {
-  const InterpretedInput(this.items, {required this.fromSentence});
+  const InterpretedInput(
+    this.items, {
+    required this.fromSentence,
+    this.engineFailed = false,
+  });
 
   /// 덩어리마다의 판정: 거래 초안, 안내문, 읽지 못한 글.
   final List<ParsedItem> items;
 
   /// 형식 규칙이 하나도 읽지 못한 한 줄 글이었는지. 자연어 입력으로 기록한다.
   final bool fromSentence;
+
+  /// 모델이 답을 내지 못한 덩어리가 있었는지(올리지 못했거나 추론이 실패했다).
+  /// 한 건도 못 읽었을 때 "읽지 못했다"가 아니라 "다시 해 보라"고 알리는 데 쓴다.
+  final bool engineFailed;
 
   Iterable<ParsedTransaction> get transactions =>
       items.whereType<TransactionItem>().map((i) => i.transaction);
@@ -42,6 +51,7 @@ Future<InterpretedInput> interpretInput(
   var items = (parser ?? PasteParser()).parse(input, today: today);
   final oneLine = !input.trim().contains('\n');
   final fromSentence = oneLine && items.every((i) => i is UnrecognizedItem);
+  var engineFailed = false;
 
   if (fromSentence && !looksLikeMessage(input)) {
     final quick = parseQuickEntry(input, today: today);
@@ -58,12 +68,24 @@ Future<InterpretedInput> interpretInput(
         resolved.add(item);
         continue;
       }
-      final result = await llm.parse(
-        item.raw,
-        today: today,
-        expenseCategories: expenseCategories,
-        incomeCategories: incomeCategories,
-      );
+      final LlmParseResult result;
+      try {
+        result = await llm.parse(
+          item.raw,
+          today: today,
+          expenseCategories: expenseCategories,
+          incomeCategories: incomeCategories,
+        );
+      } on GenerationCancelled {
+        // 사용자가 멈췄다. 남은 덩어리도 모델에 넘기지 않게 부르는 쪽에 알린다.
+        rethrow;
+      } on Object {
+        // 모델을 올리지 못했거나 추론이 실패했다. 이 덩어리는 읽지 못한 것으로 두고
+        // 나머지는 계속 읽는다. 모델이 고장 나도 규칙으로 읽은 것은 잃지 않는다.
+        engineFailed = true;
+        resolved.add(item);
+        continue;
+      }
       if (result.failed) {
         resolved.add(item);
       } else if (!result.isTransaction) {
@@ -82,5 +104,9 @@ Future<InterpretedInput> interpretInput(
     if (quick != null) items = [TransactionItem(quick)];
   }
 
-  return InterpretedInput(items, fromSentence: fromSentence);
+  return InterpretedInput(
+    items,
+    fromSentence: fromSentence,
+    engineFailed: engineFailed,
+  );
 }

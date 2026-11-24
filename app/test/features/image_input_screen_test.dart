@@ -122,7 +122,9 @@ void main() {
       expect(_key('image-pick'), findsNothing);
 
       await tester.tap(_key('image-go-models'));
-      await tester.pumpAndSettle();
+      // 모델 화면은 카탈로그를 읽는 동안 돌아가는 표시를 보여 준다. 잦아들기를 기다리지 않는다.
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
       expect(find.byType(ImageInputScreen), findsNothing);
       expect(tester.takeException(), isNull);
       await disposeApp(tester, services);

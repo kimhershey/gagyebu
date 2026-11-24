@@ -403,13 +403,13 @@ void main() {
       await disposeApp(tester, services);
     });
 
-    testWidgets('기본 제공자(아직 채우지 않은 자리)로도 지난달이 그려진다', (tester) async {
+    testWidgets('기본 제공자로는 지난달의 총평을 문장 틀로 만들어 보여 준다', (tester) async {
       final services = await createTestServices();
       await Seed.filled(services);
       await pumpApp(tester, services, size: phone, location: '/stats');
       await tester.tap(find.byTooltip('이전 달'));
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('stats-narrative')), findsNothing);
+      expect(find.byKey(const ValueKey('stats-narrative')), findsOneWidget);
       expect(find.text('날짜별 지출'), findsOneWidget);
       await disposeApp(tester, services);
     });

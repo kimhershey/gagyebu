@@ -15,6 +15,8 @@ import 'dart:io';
 /// 패키지가 아닌 구성 요소. 사람이 확인해 여기에 적는다.
 const extraComponents = <String, String>{
   'SQLite (sqlite3 패키지가 함께 넣는 네이티브 라이브러리 · sqlite3.wasm)': 'Public Domain',
+  'llama.cpp · ggml (llamadart 패키지가 함께 넣는 네이티브 라이브러리, Windows · Android)':
+      'MIT',
   'Pretendard 글꼴 (assets/fonts)': 'OFL-1.1',
   'Material Icons 글꼴 (Flutter SDK)': 'Apache-2.0',
   'CanvasKit · Skia (Flutter 웹 엔진)': 'BSD-3-Clause',

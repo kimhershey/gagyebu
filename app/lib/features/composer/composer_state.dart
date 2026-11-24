@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../ai/input_interpreter.dart';
 import '../../ai/llm/llm_engine.dart';
+import '../../ai/llm/local_model_engine.dart';
 import '../../ai/parsed_transaction.dart';
 import '../../ai/query/query_intent.dart';
 import '../../ai/text/paste_parser.dart';
@@ -262,6 +263,10 @@ class ComposerController extends Notifier<ComposerState> {
   void stop() {
     if (!state.busy) return;
     _run++;
+    // 기기 안의 모델은 생성까지 멈춘다. 멈춘 요청은 예외로 끝나고, 아래 submit()이
+    // 차례 번호가 바뀐 것을 보고 조용히 넘어간다.
+    final Object? engine = ref.read(llmEngineProvider);
+    if (engine is CancellableEngine) engine.cancelAll();
     state = ComposerState(event: state.event);
   }
 
@@ -346,6 +351,9 @@ class ComposerController extends Notifier<ComposerState> {
         state = ComposerState(
           notice: onlyNotices
               ? ComposerNotice.notTransaction
+              // 모델이 답을 내지 못해 비었으면 글 탓이 아니다. 다시 해 보라고 알린다.
+              : interpreted.engineFailed
+              ? ComposerNotice.failed
               : ComposerNotice.unreadable,
           event: state.event,
         );
