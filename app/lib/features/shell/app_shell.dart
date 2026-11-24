@@ -80,26 +80,37 @@ class AppShell extends ConsumerWidget {
     switch (size) {
       case WindowSize.compact:
         // 좁은 창에서는 검토함을 전체 화면(/review)으로 연다.
-        shell = Scaffold(
-          body: Column(
-            children: [
-              Expanded(child: navigationShell),
-              const Divider(height: 1),
-              const ComposerBar(placement: ComposerPlacement.bottom),
-            ],
+        final theme = Theme.of(context);
+        final composerHeight = ref.watch(_composerHeightProvider);
+        shell = Theme(
+          // 알림(저장했습니다 · 되돌리기)이 입력창을 덮지 않게 그 위에 띄운다. 덮으면 다음
+          // 글을 적으려다 알림의 단추를 누르게 된다.
+          data: theme.copyWith(
+            snackBarTheme: theme.snackBarTheme.copyWith(
+              insetPadding: EdgeInsets.fromLTRB(15, 5, 15, 10 + composerHeight),
+            ),
           ),
-          bottomNavigationBar: NavigationBar(
-            key: const ValueKey('nav-bottom'),
-            selectedIndex: index,
-            onDestinationSelected: _select,
-            destinations: [
-              for (final d in _tabs)
-                NavigationDestination(
-                  icon: Icon(d.icon),
-                  selectedIcon: Icon(d.selectedIcon),
-                  label: d.label,
-                ),
-            ],
+          child: Scaffold(
+            body: Column(
+              children: [
+                Expanded(child: navigationShell),
+                const Divider(height: 1),
+                const _BottomComposer(),
+              ],
+            ),
+            bottomNavigationBar: NavigationBar(
+              key: const ValueKey('nav-bottom'),
+              selectedIndex: index,
+              onDestinationSelected: _select,
+              destinations: [
+                for (final d in _tabs)
+                  NavigationDestination(
+                    icon: Icon(d.icon),
+                    selectedIcon: Icon(d.selectedIcon),
+                    label: d.label,
+                  ),
+              ],
+            ),
           ),
         );
       case WindowSize.medium:
@@ -174,6 +185,53 @@ class AppShell extends ConsumerWidget {
         );
     }
     return AppShortcuts(child: shell);
+  }
+}
+
+/// 휴대폰 배치의 입력창 높이. 알림을 그만큼 올려 띄우는 데 쓴다.
+class _ComposerHeight extends Notifier<double> {
+  @override
+  double build() => 0;
+
+  void set(double height) => state = height;
+}
+
+final _composerHeightProvider = NotifierProvider<_ComposerHeight, double>(
+  _ComposerHeight.new,
+);
+
+/// 하단 탭 위의 입력창. 높이가 바뀔 때마다(여러 줄, 예시 칩, 안내) 알린다.
+class _BottomComposer extends ConsumerStatefulWidget {
+  const _BottomComposer();
+
+  @override
+  ConsumerState<_BottomComposer> createState() => _BottomComposerState();
+}
+
+class _BottomComposerState extends ConsumerState<_BottomComposer> {
+  void _reportLater() =>
+      WidgetsBinding.instance.addPostFrameCallback((_) => _report());
+
+  void _report() {
+    if (!mounted) return;
+    final height = context.size?.height ?? 0;
+    if ((ref.read(_composerHeightProvider) - height).abs() > 0.5) {
+      ref.read(_composerHeightProvider.notifier).set(height);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _reportLater();
+    return NotificationListener<SizeChangedLayoutNotification>(
+      onNotification: (_) {
+        _reportLater();
+        return false;
+      },
+      child: const SizeChangedLayoutNotifier(
+        child: ComposerBar(placement: ComposerPlacement.bottom),
+      ),
+    );
   }
 }
 
