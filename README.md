@@ -53,7 +53,8 @@ supabase/            서버 SQL과 시험, 동기화 규약 (supabase/README.md)
 catalog/             앱이 읽는 공개 파일: 모델 카탈로그(models.json), 최신 버전(version.json)
 installer/           Windows 설치 파일 스크립트(Inno Setup)
 eval/                골든 세트 · 홀드아웃 표본, 생성 스크립트, 실측 기록
-docs/                설계서(SPEC.md), 모델 설치 · 로드(MODELS.md), 오류 기록(ERRORS.md), 개인정보 처리방침(PRIVACY.md), 화면
+docs/                설계서(SPEC.md), 모델 설치 · 로드(MODELS.md), 오류 기록(ERRORS.md), 다음에 할 일(HANDOFF.md),
+                     개인정보 처리방침(PRIVACY.md), 화면
 .github/workflows/   ci.yml(시험 · 서버 SQL · 빌드 · 웹 배포), release.yml(태그로 릴리스), backup.yml(백업)
 ```
 
