@@ -71,6 +71,15 @@ io.github.kimhershey.gagyebu://login-callback
 
 ## C. 앱이 `llama-server`를 띄우고 주소를 스스로 잡는다 (Windows)
 
+### 진행 (2026-11-26)
+
+**끝낸 것**: 앱이 `llama-server`를 스스로 띄우는 뼈대. Windows에서 받아 둔 글 모델이 있으면 앱을 켤 때 서버를 띄우고(Vulkan → 안 되면 CPU), 빈 포트와 임의의 키를 스스로 정하고, 준비되면 그 서버로 읽고, 15분 쉬면 내렸다가 다음 요청에서 다시 띄운다. 띄우지 못하면 앱 안의 엔진으로 물러난다. 설정 → AI 모델에 "엔진" 카드(실행 중 · 백엔드 · 주소 · 올라간 모델)가 생겼다. 앱이 죽으면 서버도 함께 끝나게 했다(작업 개체). 실행 파일은 판 `b12774`를 해시와 함께 고정해 설치 파일에 넣는다(`installer/fetch_engines.ps1`).
+
+- 코드: `app/lib/ai/llm/llama_server.dart`, `app/lib/app/engine_providers.dart`, `app/lib/app/background_jobs.dart`, `app/lib/features/models/models_screen.dart`의 `_EngineCard`, `app/windows/runner/main.cpp`
+- 확인: 같은 판의 Linux 실행 파일과 실제 모델로 통합 시험 통과(`app/test/integration/llama_server_test.dart`). **Windows에서는 돌려 보지 못했다.**
+
+**남은 것**: 이미지 요청을 서버로 보내기(지금은 앱 안의 엔진이 읽는다), "고급" 설정(실행 파일 직접 지정 · 쉬는 시간 · 자동 시작 끄기, 주소 칸을 고급으로 옮기기), 엔진 카드의 [다시 시작], 평가 도구의 `--sidecar`, 가짜 프로세스로 하는 상태 기계 시험.
+
 ### 목표
 
 사용자가 손댈 것이 없다. 모델을 받아 두면, 앱이 켜질 때 엔진을 띄우고, 빈 포트를 잡고, 준비되면 쓰고, 쉬면 내리고, 앱을 끄면 함께 끈다. 사용자가 보여 준 화면(다른 앱의 엔진 카드: 실행 중 · 버전 · 백엔드 Vulkan · 127.0.0.1:포트 · 로드된 모델 · 자동 시작 · 유휴 슬립)이 본보기다.

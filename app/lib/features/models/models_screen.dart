@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../ai/llm/llama_server.dart';
 import '../../ai/llm/model_catalog.dart';
 import '../../ai/llm/model_manager.dart';
 import '../../ai/llm/model_tier.dart';
+import '../../app/engine_providers.dart';
 import '../../app/theme/tokens.dart';
 import '../common/widgets.dart';
 import 'model_providers.dart';
@@ -86,6 +88,7 @@ class ModelsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 const _DeviceCard(),
+                const _EngineCard(),
                 if (platform.runsLocalModels) ...[
                   const SizedBox(height: 12),
                   const _ModelsCard(),
@@ -97,6 +100,59 @@ class ModelsScreen extends ConsumerWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 앱이 스스로 띄우는 모델 서버의 상태(Windows). 서버를 쓰지 않는 기기에서는 보이지 않는다.
+class _EngineCard extends ConsumerWidget {
+  const _EngineCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(llamaServerStatusProvider).value;
+    if (status == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final (title, detail) = switch (status.phase) {
+      LlamaServerPhase.running => (
+        '실행 중',
+        '${status.backend} · ${status.uri?.host}:${status.uri?.port} · '
+            '올라간 모델 ${status.modelName}',
+      ),
+      LlamaServerPhase.starting => (
+        '시작하는 중',
+        '${status.backend}로 ${status.modelName}을 올리고 있습니다.',
+      ),
+      LlamaServerPhase.failed => (
+        '띄우지 못함',
+        '${status.message ?? '엔진을 띄우지 못했습니다'}. 앱 안의 엔진으로 읽습니다.',
+      ),
+      LlamaServerPhase.stopped => (
+        '쉬는 중',
+        '모델을 받아 두면 앱이 스스로 띄웁니다. 쓰지 않으면 내렸다가 필요할 때 다시 띄웁니다.',
+      ),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SectionCard(
+        key: const ValueKey('models-engine'),
+        title: '엔진',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              key: const ValueKey('models-engine-state'),
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: 2),
+            Text(detail, style: muted),
+          ],
         ),
       ),
     );

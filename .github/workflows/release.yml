@@ -148,6 +148,11 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter build windows --release ${{ env.SERVER_DEFINES }}
+      # 앱이 스스로 띄우는 모델 서버(llama-server)를 빌드 폴더에 넣는다. 판과 해시는 스크립트에 있다.
+      - name: 모델 서버 실행 파일 넣기
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        run: ./installer/fetch_engines.ps1
       # Flutter의 Windows 앱은 VC++ 런타임 DLL이 있어야 켜진다. 없는 PC에서도 돌게 실행 폴더에 함께 넣는다.
       # Visual Studio의 재배포 폴더에서 찾고, 없으면 러너의 System32에 있는 것을 쓴다.
       - name: VC++ 런타임을 실행 폴더에 넣기

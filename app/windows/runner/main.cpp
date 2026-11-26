@@ -22,6 +22,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     return EXIT_SUCCESS;
   }
 
+  // The app starts llama-server as a child process. Put this process in a job
+  // object that kills its members when the last handle closes, so the server
+  // never outlives the app, even after a crash. The handle is deliberately
+  // left open; Windows closes it when this process ends.
+  if (HANDLE job = ::CreateJobObjectW(nullptr, nullptr)) {
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits = {};
+    limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    ::SetInformationJobObject(job, JobObjectExtendedLimitInformation, &limits,
+                              sizeof(limits));
+    ::AssignProcessToJobObject(job, ::GetCurrentProcess());
+  }
+
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {

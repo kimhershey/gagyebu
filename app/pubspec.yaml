@@ -1,7 +1,7 @@
 name: gagyebu
 description: "LLM·VLM 기반 가계부"
 publish_to: 'none'
-version: 0.1.1+2
+version: 0.1.2+3
 
 environment:
   sdk: ^3.14.0

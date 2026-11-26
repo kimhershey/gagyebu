@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../ai/llm/llama_server.dart';
 import '../ai/llm/llm_engine.dart';
 import '../ai/llm/local_model_engine.dart';
 import '../ai/llm/local_model_runtime.dart';
@@ -101,7 +102,43 @@ final llmEngineProvider = Provider<LlmEngine?>((ref) {
   }
 
   final spec = ref.watch(localModelSpecsProvider.select((s) => s.text));
-  return spec == null ? null : ref.watch(_localEngineProvider(spec));
+  if (spec == null) return null;
+  final local = ref.watch(_localEngineProvider(spec));
+  // Windows: 앱이 모델 서버를 스스로 띄워 쓴다. 띄우지 못하면 앱 안의 엔진으로 물러난다.
+  final server = ref.watch(llamaServerManagerProvider);
+  if (server == null) return local;
+  final engine = LlamaServerEngine(
+    manager: server,
+    // 서버는 글만 맡는다. 이미지는 앱 안의 엔진이 읽는다.
+    spec: LocalModelSpec(name: spec.name, modelPath: spec.modelPath),
+    fallback: local,
+  );
+  ref.onDispose(engine.close);
+  return engine;
+});
+
+/// 앱이 띄우는 모델 서버의 관리자. Windows에서 서버 실행 파일이 설치 폴더에 있을 때만 있다.
+/// 시험에서 가짜로 바꿔 끼운다.
+final llamaServerManagerProvider = Provider<LlamaServerManager?>((ref) {
+  if (ref.watch(devicePlatformProvider) != DevicePlatform.windows) return null;
+  final executables = findLlamaServerExecutables();
+  if (executables.isEmpty) return null;
+  final manager = LlamaServerManager(executables: executables);
+  ref.onDispose(manager.dispose);
+  return manager;
+});
+
+/// 서버의 상태. 설정 → AI 모델의 엔진 카드가 본다.
+final llamaServerStatusProvider = StreamProvider<LlamaServerStatus?>((
+  ref,
+) async* {
+  final manager = ref.watch(llamaServerManagerProvider);
+  if (manager == null) {
+    yield null;
+    return;
+  }
+  yield manager.status;
+  yield* manager.statusChanges;
 });
 
 /// 이미지를 읽는 모델. 없으면 null이고 이미지 입력을 쓸 수 없다.

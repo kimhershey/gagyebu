@@ -17,6 +17,8 @@ const extraComponents = <String, String>{
   'SQLite (sqlite3 패키지가 함께 넣는 네이티브 라이브러리 · sqlite3.wasm)': 'Public Domain',
   'llama.cpp · ggml (llamadart 패키지가 함께 넣는 네이티브 라이브러리, Windows · Android)':
       'MIT',
+  'llama.cpp의 llama-server와 함께 오는 DLL (설치 파일의 engines/, Windows)': 'MIT',
+  'LLVM OpenMP 런타임 (llama-server와 함께 온다, Windows)': 'Apache-2.0',
   'Pretendard 글꼴 (assets/fonts)': 'OFL-1.1',
   'Material Icons 글꼴 (Flutter SDK)': 'Apache-2.0',
   'CanvasKit · Skia (Flutter 웹 엔진)': 'BSD-3-Clause',

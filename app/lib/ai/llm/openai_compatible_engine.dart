@@ -16,12 +16,16 @@ class OpenAiCompatibleEngine implements LlmEngine {
     http.Client? client,
     this.timeout = const Duration(minutes: 3),
     this.useGrammar = true,
+    this.apiKey,
   }) : _url = endpoint.resolve('/v1/chat/completions'),
        _client = client ?? http.Client();
 
   final Uri _url;
   final http.Client _client;
   final Duration timeout;
+
+  /// 서버가 키를 요구하면 보낸다. 앱이 스스로 띄운 서버는 띄울 때 정한 키를 받는다.
+  final String? apiKey;
 
   /// 서버가 `grammar` 필드(GBNF)를 받는지. llama.cpp 서버는 받는다.
   final bool useGrammar;
@@ -40,7 +44,10 @@ class OpenAiCompatibleEngine implements LlmEngine {
     final response = await _client
         .post(
           _url,
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            if (apiKey != null) 'Authorization': 'Bearer $apiKey',
+          },
           body: jsonEncode({
             'model': modelName,
             'messages': [
