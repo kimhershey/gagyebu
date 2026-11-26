@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/providers.dart';
 import '../../app/sync_controller.dart';
 import 'auth_frame.dart';
 
@@ -41,6 +42,7 @@ class WelcomeScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 32),
+        SignInFailureNotice(auth: ref.watch(appServicesProvider).server?.auth),
         FilledButton(
           key: const ValueKey('welcome-signup'),
           onPressed: () => context.go('/welcome/signup'),

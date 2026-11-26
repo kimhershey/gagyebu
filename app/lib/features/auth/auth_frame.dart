@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../data/server/server_connection.dart';
@@ -59,3 +62,59 @@ String authFailureMessage(AuthFailure failure, {required String action}) =>
       AuthFailureReason.unknown =>
         '$action 못했습니다${failure.detail == null ? '' : ': ${failure.detail}'}',
     };
+
+/// 브라우저에서 돌아온 로그인을 끝내지 못했을 때의 알림. 실패가 없으면 아무것도 그리지 않는다.
+///
+/// 웹에서는 다른 앱(PC · 휴대폰 앱)에서 시작한 로그인이 이 페이지로 잘못 돌아왔을 때
+/// 생긴다. 서버의 Redirect URLs에 앱 주소가 빠져 있으면 그렇게 된다.
+class SignInFailureNotice extends StatefulWidget {
+  const SignInFailureNotice({super.key, required this.auth});
+
+  final AuthService? auth;
+
+  @override
+  State<SignInFailureNotice> createState() => _SignInFailureNoticeState();
+}
+
+class _SignInFailureNoticeState extends State<SignInFailureNotice> {
+  StreamSubscription<AuthFailure>? _subscription;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final auth = widget.auth;
+    if (auth == null) return;
+    _failed = auth.takeSignInFailure() != null;
+    _subscription = auth.signInFailures.listen((_) {
+      auth.takeSignInFailure();
+      if (mounted) setState(() => _failed = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_subscription?.cancel());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_failed) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(
+        kIsWeb
+            ? '이 로그인은 다른 앱에서 시작된 것이라 여기서 끝낼 수 없습니다. '
+                  '시작한 앱으로 돌아가 다시 시도해 주세요.'
+            : '로그인을 마치지 못했습니다. 다시 시도해 주세요.',
+        key: const ValueKey('sign-in-failure'),
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.error,
+        ),
+      ),
+    );
+  }
+}

@@ -86,6 +86,13 @@ abstract interface class AuthService {
   /// 로그인 · 로그아웃할 때마다 알린다.
   Stream<AuthUser?> get userChanges;
 
+  /// 브라우저에서 돌아온 로그인을 끝내지 못했을 때 알린다(돌아온 코드를 세션으로 바꾸지
+  /// 못했다). 버튼을 누른 자리에서 던지는 [AuthFailure]와 달리 나중에 따로 온다.
+  Stream<AuthFailure> get signInFailures;
+
+  /// 화면이 뜨기 전에 와 있던 실패를 한 번 꺼낸다. 없으면 null.
+  AuthFailure? takeSignInFailure();
+
   /// 이 플랫폼에서 Google 로그인을 쓸 수 있는지. 이메일 로그인은 어디서나 된다.
   bool get googleAvailable;
 

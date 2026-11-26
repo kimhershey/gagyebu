@@ -41,6 +41,19 @@ class FakeAuth implements AuthService {
   @override
   bool googleAvailable = true;
 
+  final failures = StreamController<AuthFailure>.broadcast();
+  AuthFailure? pendingFailure;
+
+  @override
+  Stream<AuthFailure> get signInFailures => failures.stream;
+
+  @override
+  AuthFailure? takeSignInFailure() {
+    final failure = pendingFailure;
+    pendingFailure = null;
+    return failure;
+  }
+
   @override
   Stream<AuthUser?> get userChanges => _changes.stream;
 

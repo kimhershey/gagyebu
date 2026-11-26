@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -36,6 +39,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   /// 확인 메일을 보낸 주소. 있으면 입력 칸 대신 안내를 보여 준다.
   String? _sentTo;
 
+  /// 브라우저로 로그인하러 나간 뒤 돌아오기를 기다리는 중인지(앱에서만).
+  bool _waiting = false;
+
+  /// 기다린 지 오래됐는지. 돌아오지 않을 때 볼 것을 알려 준다.
+  bool _waitedLong = false;
+  Timer? _longWait;
+
   bool get _signUp => widget.mode == AuthMode.signUp;
 
   @override
@@ -43,6 +53,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     _email.dispose();
     _password.dispose();
     _confirm.dispose();
+    _longWait?.cancel();
     super.dispose();
   }
 
@@ -102,8 +113,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     TextInput.finishAutofillContext();
   }
 
-  Future<void> _google() =>
-      _run(ref.read(syncControllerProvider.notifier).signInWithGoogle);
+  Future<void> _google() async {
+    await _run(ref.read(syncControllerProvider.notifier).signInWithGoogle);
+    // 웹은 이 탭이 로그인 페이지로 간다. 앱은 브라우저가 따로 열리고 이 화면이 남는다.
+    if (!mounted || kIsWeb || _error != null) return;
+    _longWait?.cancel();
+    setState(() {
+      _waiting = true;
+      _waitedLong = false;
+    });
+    _longWait = Timer(const Duration(seconds: 60), () {
+      if (mounted) setState(() => _waitedLong = true);
+    });
+  }
+
+  void _stopWaiting() {
+    _longWait?.cancel();
+    setState(() => _waiting = false);
+  }
 
   void _back() => context.go('/welcome');
 
@@ -181,7 +208,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             icon: const Icon(Icons.login, size: 18),
             label: Text(_signUp ? 'Google 계정으로 만들기' : 'Google로 로그인'),
           ),
-          if (_signUp) ...[
+          if (_signUp && !_waiting) ...[
             const SizedBox(height: 6),
             Text(
               'Google 계정을 고르면 바로 만들어집니다.',
@@ -189,6 +216,42 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               style: muted,
             ),
           ],
+          if (_waiting) ...[
+            const SizedBox(height: 8),
+            Text(
+              '브라우저에서 로그인을 마치면 이 창으로 돌아옵니다. 브라우저가 '
+              '"가계부를 여시겠습니까"라고 물으면 열기를 눌러 주세요.',
+              key: const ValueKey('auth-google-waiting'),
+              style: muted,
+            ),
+            if (_waitedLong) ...[
+              const SizedBox(height: 6),
+              Text(
+                '돌아오지 않으면 브라우저에 무엇이 보이는지 확인해 주세요. 웹 가계부가 '
+                '열렸다면 서버에 앱 주소가 등록되지 않은 것입니다.',
+                key: const ValueKey('auth-google-waited-long'),
+                style: muted,
+              ),
+            ],
+            Wrap(
+              alignment: WrapAlignment.end,
+              children: [
+                TextButton(
+                  key: const ValueKey('auth-google-reopen'),
+                  onPressed: _busy ? null : _google,
+                  child: const Text('브라우저 다시 열기'),
+                ),
+                TextButton(
+                  key: const ValueKey('auth-google-cancel'),
+                  onPressed: _stopWaiting,
+                  child: const Text('취소'),
+                ),
+              ],
+            ),
+          ],
+          SignInFailureNotice(
+            auth: ref.watch(appServicesProvider).server?.auth,
+          ),
         ] else
           Text(
             '이 앱에서는 Google 로그인을 준비하고 있습니다. 이메일로 '

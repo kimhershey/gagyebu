@@ -100,7 +100,33 @@ class SupabaseAuthService implements AuthService {
     _client.auth.onAuthStateChange.listen((state) {
       if (state.event == AuthChangeEvent.passwordRecovery) _setRecovery(true);
       if (state.event == AuthChangeEvent.signedOut) _setRecovery(false);
-    }, onError: (Object _) {});
+    }, onError: _onAuthError);
+  }
+
+  final _failures = StreamController<AuthFailure>.broadcast();
+  AuthFailure? _pendingFailure;
+
+  /// 로그인 흐름에서 온 오류. 브라우저에서 돌아온 코드를 세션으로 바꾸지 못한 경우가
+  /// 여기로 온다. 연결이 끊겨 세션을 갱신하지 못한 것은 로그인 실패가 아니므로 넘긴다.
+  void _onAuthError(Object error) {
+    if (error is! AuthException ||
+        error is AuthRetryableFetchException ||
+        error is AuthSessionMissingException) {
+      return;
+    }
+    final failure = AuthFailure(_reason(error), error.message);
+    _pendingFailure = failure;
+    _failures.add(failure);
+  }
+
+  @override
+  Stream<AuthFailure> get signInFailures => _failures.stream;
+
+  @override
+  AuthFailure? takeSignInFailure() {
+    final failure = _pendingFailure;
+    _pendingFailure = null;
+    return failure;
   }
 
   final SupabaseClient _client;

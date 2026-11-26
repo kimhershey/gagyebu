@@ -244,6 +244,8 @@ class _ModelsCard extends ConsumerWidget {
       );
     } else {
       body = Column(
+        // 줄마다 폭이 달라 정렬을 주지 않으면 제각각 가운데로 쏠린다.
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final (index, entry) in entries.indexed) ...[
             if (index > 0) const Divider(height: 24),
