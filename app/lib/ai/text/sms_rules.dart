@@ -345,6 +345,18 @@ final List<SmsRule> builtinSmsRules = List.unmodifiable([
         '^$_amt원\\s+(?<dirword>입금|출금)\\s+(?<party>.+?)\\s*→\\s*(?<acctname>.+)\$',
   ),
   SmsRule(
+    id: 'bank_app_masked_account',
+    institution: '은행 앱',
+    kind: AccountHintKind.bank,
+    // 은행 앱의 거래 알림을 복사한 것. 은행 이름이 없고 줄마다 한 가지씩 적힌다.
+    // 2026.11.26 11:58:55 / 110●●●●29758 / 참다올 협동조 / 출금 10,500원
+    pattern:
+        '^(?<year>\\d{4})\\.(?<mon>\\d{1,2})\\.(?<day>\\d{1,2})\\s+$_t\\s+'
+        // 가림 글자(●)는 앞에서 '·'로 바뀌어 온다.
+        '(?<acct>\\d{2,}[*·●]{2,}\\d{2,})\\s+(?<party>.+?)\\s+'
+        '(?<dirword>입금|출금)\\s*$_amt원(?:\\s+$_bal)?\$',
+  ),
+  SmsRule(
     id: 'shinhan_sol_push',
     institution: '신한은행',
     kind: AccountHintKind.bank,

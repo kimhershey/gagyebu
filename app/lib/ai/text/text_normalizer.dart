@@ -39,6 +39,7 @@ String normalizeText(String input) {
         sb.write(' ');
       case 0x30FB: // ・
       case 0xFF65: // ･
+      case 0x25CF: // ● (은행 앱이 계좌번호를 가릴 때 쓴다)
       case 0x2022: // •
       case 0x2027: // ‧
         sb.write('·');
